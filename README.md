@@ -10,7 +10,10 @@ It's the shell half of the `ekitai-qs` rice in my [dotfiles](https://github.com/
 provide the colours (the `rice` theme switcher writes `~/.local/state/rice/palette.json`), the fonts and the helper
 scripts it calls. See [Needs](#needs).
 
-## Run it
+## Licence
+
+All rights reserved: this is here to look at, not to use. You may not copy it, use it in your own setup or
+build on it without my permission (see [LICENSE](LICENSE); ask in an issue). For my own machines:
 
 ```sh
 git clone https://github.com/BugzySleeps/liquid ~/.config/quickshell/ekitai
@@ -137,5 +140,5 @@ Its own settings are saved in `~/.local/state/ekitai/` (`settings.json`, `look.j
 
 ## Credits
 
-Emoji names from [gemoji](https://github.com/github/gemoji) (MIT). Lyrics from [lrclib](https://lrclib.net),
+Emoji names from [gemoji](https://github.com/github/gemoji) (MIT; its notice is in [LICENSE](LICENSE)). Lyrics from [lrclib](https://lrclib.net),
 weather from [open-meteo](https://open-meteo.com).
