@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>liquid · ekitai</title>
+<meta name="description" content="ekitai (液体, liquid): a Quickshell shell for Hyprland, all in one glowing liquid.">
+<meta property="og:title" content="liquid · ekitai">
+<meta property="og:description" content="A Quickshell shell for Hyprland, all in one glowing liquid.">
+<meta property="og:image" content="https://bugzysleeps.github.io/liquid/screenshots/lock.png">
+<link rel="icon" href="favicon.svg">
+<style>
+@font-face {
+  font-family: "Departure Mono";
+  src: url("fonts/DepartureMono-Regular.otf") format("opentype");
+  font-display: swap;
+}
+:root {
+  --bg: #000;
+  --bg1: #030803;
+  --bg2: #071209;
+  --bg3: #0d1c10;
+  --accent: #5fe878;
+  --accent2: #2f9e45;
+  --dim: #1f5c2b;
+  --bright: #b8f7c4;
+  --glow: 0 0 12px rgba(95, 232, 120, .45);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--accent);
+  font: 16px/1.6 "Departure Mono", ui-monospace, monospace;
+  -webkit-font-smoothing: none;
+}
+a { color: var(--bright); }
+::selection { background: var(--accent); color: var(--bg); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+/* ── the top: logo over a pool of liquid ── */
+.hero {
+  position: relative;
+  min-height: 92vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  text-align: center;
+}
+#pool { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hero .inner { position: relative; padding: 48px 16px 22vh; }
+.logo { width: 180px; height: 180px; filter: drop-shadow(0 0 10px rgba(95, 232, 120, .55)); cursor: pointer; }
+.logo .ring { transform-box: fill-box; transform-origin: center; }
+.logo .drop { transform-box: view-box; transform-origin: 128px 22px; }
+.logo.drip .drop { animation: drip 1.65s; }
+.logo.drip .trail { animation: trail 1.6s; }
+.logo.drip .ring { animation: spread 1.1s cubic-bezier(.2, .8, .3, 1) backwards; }
+.logo.drip .ring:nth-of-type(1) { animation-delay: .42s; }
+.logo.drip .ring:nth-of-type(2) { animation-delay: .52s; }
+.logo.drip .ring:nth-of-type(3) { animation-delay: .62s; }
+.logo.drip .ring:nth-of-type(4) { animation-delay: .72s; }
+/* falls in (0.42 s), gone, then a new drop forms from its tip */
+@keyframes drip {
+  0% { transform: none; opacity: 1; animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  25% { transform: translateY(98px) scaleY(1.18); opacity: 0; }
+  25.1%, 60% { transform: scale(.3); opacity: 0; animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes trail { 0%, 100% { opacity: 1; } 20%, 70% { opacity: 0; } }
+@keyframes spread { from { transform: scale(.25); opacity: 0; } }
+h1 {
+  margin: 12px 0 0;
+  font-size: clamp(44px, 9vw, 88px);
+  font-weight: normal;
+  letter-spacing: .12em;
+  color: var(--accent);
+  text-shadow: var(--glow);
+}
+.kanji { font-family: "Noto Sans CJK JP", "Hiragino Sans", sans-serif; color: var(--accent2); letter-spacing: .6em; margin-left: .6em; }
+.tag { color: var(--bright); max-width: 34em; margin: 18px auto 28px; }
+.btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+  background: rgba(0, 0, 0, .5);
+}
+.btn.solid { background: var(--accent); color: var(--bg); }
+.btn:hover { box-shadow: var(--glow); background: var(--bright); border-color: var(--bright); color: var(--bg); }
+
+/* ── sections ── */
+section { padding: 72px 0 24px; }
+h2 { font-weight: normal; font-size: 22px; color: var(--bright); margin: 0 0 6px; }
+h2::before { content: "── "; color: var(--dim); }
+.sub { color: var(--accent2); margin: 0 0 24px; }
+
+/* the tour: the video and its chapters */
+.tour { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+video { width: 100%; display: block; border: 2px solid var(--dim); background: var(--bg1); }
+.chapters { list-style: none; margin: 0; padding: 0; border: 2px solid var(--dim); max-height: 100%; overflow: auto; }
+.chapters button {
+  all: unset;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 12px;
+  cursor: pointer;
+  color: var(--accent);
+}
+.chapters button span { color: var(--accent2); }
+.chapters button:hover, .chapters button:focus-visible { background: var(--bg3); color: var(--bright); }
+.chapters button.on { background: var(--accent); color: var(--bg); }
+.chapters button.on span { color: var(--bg); }
+@media (max-width: 760px) { .tour { grid-template-columns: 1fr; } .chapters { overflow: visible; font-size: 14px; } }
+
+/* screenshots */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+figure { margin: 0; }
+figure button { all: unset; display: block; cursor: zoom-in; border: 2px solid var(--dim); line-height: 0; }
+figure button:hover, figure button:focus-visible { border-color: var(--accent); box-shadow: var(--glow); }
+figure img { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+figcaption { color: var(--accent2); font-size: 14px; margin-top: 6px; }
+dialog { border: 2px solid var(--accent); padding: 0; background: var(--bg); max-width: 96vw; max-height: 94vh; }
+dialog::backdrop { background: rgba(0, 0, 0, .85); }
+dialog img { display: block; max-width: 94vw; max-height: 86vh; }
+dialog p { margin: 0; padding: 8px 12px; color: var(--bright); }
+
+/* features */
+.features { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.feature { border: 2px solid var(--dim); padding: 14px 16px; background: var(--bg1); }
+.feature h3 { margin: 0 0 6px; font-weight: normal; color: var(--bright); font-size: 16px; }
+.feature p { margin: 0; color: var(--accent); font-size: 14px; }
+
+pre {
+  background: var(--bg2);
+  border: 2px solid var(--dim);
+  padding: 14px 16px;
+  overflow-x: auto;
+  color: var(--bright);
+}
+.note { border-left: 4px solid var(--accent); padding: 4px 0 4px 14px; color: var(--bright); }
+footer { padding: 56px 0 40px; color: var(--accent2); font-size: 14px; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .logo.drip * { animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <canvas id="pool" aria-hidden="true"></canvas>
+  <div class="inner">
+    <svg class="logo" viewBox="0 0 256 256" role="img" aria-label="the ekitai logo: a drop falling into ripples">
+      <g fill="none" stroke="#5fe878">
+        <ellipse class="ring" cx="128" cy="190" rx="28" ry="9.5" stroke-width="7"/>
+        <ellipse class="ring" cx="128" cy="190" rx="60" ry="20" stroke-width="6" opacity=".85" pathLength="100" stroke-dasharray="15 2"/>
+        <ellipse class="ring" cx="128" cy="190" rx="92" ry="31" stroke-width="5" opacity=".6" pathLength="100" stroke-dasharray="5 2.2"/>
+        <ellipse class="ring" cx="128" cy="190" rx="120" ry="40.5" stroke-width="4" opacity=".4" pathLength="100" stroke-dasharray="1.4 2"/>
+      </g>
+      <g class="trail" fill="#5fe878"><circle cx="128" cy="124" r="4" opacity=".7"/><circle cx="128" cy="142" r="3" opacity=".45"/></g>
+      <path class="drop" fill="#5fe878" d="M128 22 C128 22 103 60 103 80 A25 25 0 0 0 153 80 C153 60 128 22 128 22 Z"/>
+    </svg>
+    <h1>ekitai</h1>
+    <div class="kanji">液体</div>
+    <p class="tag">a <a href="https://quickshell.org">Quickshell</a> shell for Hyprland: a bar, panels, a lock screen, a
+      launcher, notifications and desktop widgets, all in one glowing liquid.</p>
+    <div class="btns">
+      <a class="btn solid" href="#tour">▶ watch the tour</a>
+      <a class="btn" href="#screens">screenshots</a>
+      <a class="btn" href="https://github.com/BugzySleeps/liquid">github</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="tour">
+    <h2>the tour</h2>
+    <p class="sub">1:49, with sound: the lock screen's water, the terminal and notification sounds. The song in the music part is muted.</p>
+    <div class="tour">
+      <video id="video" controls preload="metadata" playsinline poster="screenshots/lock.png">
+        <source src="tour.mp4" type="video/mp4">
+        Your browser can't play this video. <a href="tour.mp4">Download it</a> instead.
+      </video>
+      <ul class="chapters" id="chapters"></ul>
+    </div>
+  </section>
+
+  <section id="screens">
+    <h2>screenshots</h2>
+    <p class="sub">click one to see it full size.</p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="features">
+    <h2>what's in it</h2>
+    <p class="sub">it replaces waybar, mako, wofi and hyprlock.</p>
+    <div class="features">
+      <div class="feature"><h3>lock screen</h3><p>Liquid rises over your blurred wallpaper (a GPU shader), the login box floats on its waves, every key drops a ripple, a wrong password splashes, and unlocking drains it away, each with its own water sound.</p></div>
+      <div class="feature"><h3>dynamic island</h3><p>The middle of the bar swells down like a stretching drop for the volume (liquid filling across it), a new track, or a notification.</p></div>
+      <div class="feature"><h3>launcher</h3><p>Apps, plus a mode per first character: <b>=</b> maths, <b>:</b> emoji, <b>/</b> files, <b>!</b> web search, <b>#</b> colours off the screen, <b>&gt;</b> commands.</p></div>
+      <div class="feature"><h3>music</h3><p>The cover blurred through the panel, a waterline visualizer, synced lyrics, cmus's library and queue, and a 10-band eq on everything playing.</p></div>
+      <div class="feature"><h3>wallpapers recolour everything</h3><p>Pick a wallpaper and the bar, panels, borders, terminal and lock screen all take its colours, crossfading live.</p></div>
+      <div class="feature"><h3>workspace overview</h3><p>Every workspace floats on the liquid as a pool of live previews; drag a window between them and it lands with a splash.</p></div>
+      <div class="feature"><h3>shapes and glass</h3><p>Square, round or squiggle for everything at once, with liquid glass (see-through, frosted, a sheen of light) on top.</p></div>
+      <div class="feature"><h3>sounds</h3><p>All synthesised from scratch in Python: the lock screen's water, terminal open and close sounds in five styles, notification sounds.</p></div>
+      <div class="feature"><h3>and more</h3><p>Control centre, calendar, desktop widgets, clipboard history, a window switcher, a screenshot editor, a first-run welcome, and a performance mode.</p></div>
+    </div>
+  </section>
+
+  <section id="use">
+    <h2>use it</h2>
+    <p class="sub">it's the shell half of the ekitai rice: colours, fonts and helper scripts come from the <a href="https://github.com/BugzySleeps/bugzysdotfiles">dotfiles</a>.</p>
+<pre>git clone https://github.com/BugzySleeps/liquid ~/.config/quickshell/ekitai
+qs -c ekitai</pre>
+    <p class="note">You're welcome to use liquid: install it, run it, tweak your own copy and show it off. Taking its code,
+      sounds or art into your own project, or re-uploading it, needs permission first. See the
+      <a href="https://github.com/BugzySleeps/liquid/blob/main/LICENSE">licence</a>.</p>
+  </section>
+
+</main>
+
+<footer>
+  ekitai · liquid · by <a href="https://github.com/BugzySleeps">BugzySleeps</a> · type: Departure Mono (OFL)
+</footer>
+
+<dialog id="lightbox"><img alt=""><p></p></dialog>
+
+<script>
+// the tour's chapters: [seconds, name]
+const chapters = [
+  [0, "desktop"], [4.6, "lock screen"], [10.6, "a wrong password"], [14.5, "unlocking"],
+  [18.4, "notifications"], [24.7, "launcher"], [36.7, "control centre"], [39.9, "calendar"],
+  [42.6, "music"], [60.1, "wallpaper picker"], [64.4, "terminal sounds"], [67.5, "workspace overview"],
+  [72.5, "shapes and glass"], [85.2, "settings"], [90.1, "screenshot editor"], [93.3, "welcome"],
+];
+const video = document.getElementById("video");
+const list = document.getElementById("chapters");
+const time = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+const buttons = chapters.map(([t, name]) => {
+  const li = document.createElement("li");
+  const b = document.createElement("button");
+  b.innerHTML = `${name} <span>${time(t)}</span>`;
+  b.onclick = () => { video.currentTime = t; video.play(); };
+  li.append(b);
+  list.append(li);
+  return b;
+});
+video.addEventListener("timeupdate", () => {
+  let on = 0;
+  chapters.forEach(([t], i) => { if (video.currentTime >= t - 0.05) on = i; });
+  buttons.forEach((b, i) => b.classList.toggle("on", i === on));
+});
+
+// screenshots: [file, caption]
+const shots = [
+  ["desktop", "the desktop: bar, widgets, now playing"], ["lock", "the lock screen, floating on the liquid"],
+  ["lock-splash", "a wrong password splashes"], ["control", "control centre"],
+  ["music", "music: visualizer and lyrics"], ["eq", "a 10-band eq on everything playing"],
+  ["library", "cmus's library and queue"], ["island-track", "the island: a new track"],
+  ["island-notify", "the island: a notification"], ["island-level", "the island: volume, filling like liquid"],
+  ["launcher", "launcher"], ["launcher-emoji", "launcher: emoji"],
+  ["launcher-maths", "launcher: maths"], ["launcher-colour", "launcher: colours"],
+  ["wallpapers", "wallpaper picker (recolours everything)"], ["overview", "workspace overview"],
+  ["calendar", "calendar"], ["terminal", "a terminal, with its own sounds"],
+  ["round", "round"], ["squiggle", "squiggle"], ["glass", "liquid glass"], ["editor", "screenshot editor"],
+  ["settings", "settings"], ["settings-sound", "settings: sound"],
+  ["welcome", "welcome, on the first start"], ["welcome-wall", "welcome: pick a wallpaper"],
+  ["welcome-shape", "welcome: pick a shape"], ["welcome-keys", "welcome: the keys"],
+];
+const grid = document.getElementById("grid");
+const box = document.getElementById("lightbox");
+for (const [file, caption] of shots) {
+  const fig = document.createElement("figure");
+  const b = document.createElement("button");
+  const img = new Image(1600, 900);
+  img.src = `screenshots/${file}.png`;
+  img.alt = caption;
+  img.loading = "lazy";
+  b.append(img);
+  b.onclick = () => {
+    box.querySelector("img").src = img.src;
+    box.querySelector("p").textContent = caption;
+    box.showModal();
+  };
+  const cap = document.createElement("figcaption");
+  cap.textContent = caption;
+  fig.append(b, cap);
+  grid.append(fig);
+}
+box.onclick = () => box.close();
+
+// the logo drips now and then (and when you click it)
+const logo = document.querySelector(".logo");
+function drip() {
+  logo.classList.remove("drip");
+  void logo.getBoundingClientRect();
+  logo.classList.add("drip");
+}
+logo.onclick = drip;
+setTimeout(drip, 600);
+setInterval(drip, 5200);
+
+// the pool: the shell's liquid surface (the same sums of waves as its shader), a glowing waterline,
+// bubbles rising, and a ripple wherever you click
+const canvas = document.getElementById("pool");
+const ctx = canvas.getContext("2d");
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let w = 0, h = 0, t = 0, last = performance.now();
+const ripples = [];
+const bubbles = Array.from({ length: 26 }, () => ({ x: Math.random(), y: Math.random(), r: 1 + Math.random() * 2.2, v: 10 + Math.random() * 22 }));
+function size() {
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  w = canvas.clientWidth; h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function surface(x) {
+  let y = Math.sin(x * 0.0061 + t * 0.9) * 9 + Math.sin(x * 0.0123 - t * 1.4) * 5 + Math.sin(x * 0.0271 + t * 2.3) * 2;
+  for (const r of ripples) {
+    const age = t - r.t, d = Math.abs(x - r.x), front = age * 420;
+    const k = Math.max(0, Math.min(1, (front - d) / 160));
+    y += Math.sin(d * 0.045 - age * 11) * 16 * r.s * k * k * (3 - 2 * k) * Math.exp(-age * 1.3) * Math.exp(-d * 0.0022);
+  }
+  return h * 0.8 + y;
+}
+function frame(now) {
+  t += Math.min(0.05, (now - last) / 1000);
+  last = now;
+  while (ripples.length && t - ripples[0].t > 4) ripples.shift();
+  ctx.clearRect(0, 0, w, h);
+  const pts = [];
+  for (let x = 0; x <= w + 8; x += 8) pts.push([x, surface(x)]);
+  const g = ctx.createLinearGradient(0, h * 0.72, 0, h);
+  g.addColorStop(0, "rgba(47, 158, 69, .55)");
+  g.addColorStop(1, "rgba(7, 18, 9, .95)");
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (const [x, y] of pts) ctx.lineTo(x, y);
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.beginPath();
+  pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+  ctx.strokeStyle = "#b8f7c4";
+  ctx.lineWidth = 2;
+  ctx.shadowColor = "#5fe878";
+  ctx.shadowBlur = 16;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(184, 247, 196, .5)";
+  for (const b of bubbles) {
+    b.y -= b.v / h * (still ? 0 : 1) * 0.016;
+    const x = b.x * w, top = surface(x);
+    let y = top + 6 + b.y * (h - top);
+    if (b.y < 0) { b.y = 1; b.x = Math.random(); }
+    ctx.beginPath();
+    ctx.arc(x + Math.sin(t * 2 + b.x * 40) * 3, y, b.r, 0, 7);
+    ctx.fill();
+  }
+  if (!still) requestAnimationFrame(frame);
+}
+addEventListener("resize", size);
+document.querySelector(".hero").addEventListener("pointerdown", e => {
+  if (e.target.closest("a, .logo")) return;
+  const rect = canvas.getBoundingClientRect();
+  ripples.push({ x: e.clientX - rect.left, t, s: 1 });
+});
+size();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

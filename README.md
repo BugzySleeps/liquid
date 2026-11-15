@@ -1,5 +1,7 @@
 <p align="center"><img src="assets/logo/logo-wordmark.png" alt="ekitai" width="460"></p>
 
+<p align="center"><a href="https://bugzysleeps.github.io/liquid/">bugzysleeps.github.io/liquid</a></p>
+
 # liquid
 
 ekitai (液体, "liquid") is a [Quickshell](https://quickshell.org) shell for Hyprland: a bar, panels, a lock
@@ -14,7 +16,7 @@ scripts it calls. See [Needs](#needs).
 
 <p align="center"><img src="docs/lock-intro.gif" alt="the lock screen's login intro" width="800"></p>
 
-**[▶ Watch the tour](docs/tour.mp4)** (1:49, with sound): the lock screen and its water sounds, notifications,
+**[▶ Watch the tour on the site](https://bugzysleeps.github.io/liquid/#tour)** (1:49, with sound, with chapters): the lock screen and its water sounds, notifications,
 the launcher, control centre, calendar, music, wallpapers, terminal sounds, the overview, the shapes and glass,
 settings, the screenshot editor and the welcome. The song in the music part is muted.
 
