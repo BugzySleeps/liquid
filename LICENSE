@@ -1,16 +1,35 @@
-Copyright (c) 2026 BugzySleeps. All rights reserved.
+liquid (ekitai) licence
 
-This repository (the code, shaders, sounds, logo and other artwork) is published only so it
-can be viewed. No licence is granted to use it.
+Copyright (c) 2026 BugzySleeps. All rights reserved, except as set out below.
 
-Without written permission from the copyright holder, you may not copy, modify, merge,
-publish, distribute, sublicense or sell any part of it, use it in your own shell, dotfiles
-or other projects, or make works based on it. Viewing it here, and forking it on GitHub as
-GitHub's Terms of Service allow, does not give you any of these rights.
+"The Software" means everything in this repository: the code, shaders, sounds, logo and other
+artwork.
+
+You MAY:
+  1. Download and install the Software, and run it as your shell, on any computer you use.
+  2. Change your own installed copy to suit your own setup (colours, keybinds, settings,
+     widgets and so on).
+  3. Show the Software in use: screenshots, videos, streams, and posts about your setup.
+  4. Point others to it by linking to https://github.com/BugzySleeps/liquid (including from
+     your own dotfiles, for example as a git submodule or an install step that clones it).
+
+You MAY NOT, without written permission from the copyright holder:
+  5. Copy any part of the Software (code, shaders, sounds, logo or artwork), changed or not,
+     into another project, shell, configuration, theme or program.
+  6. Publish, share or host a copy of the Software, or a modified version of it, anywhere
+     other than this repository, except for a GitHub fork made through GitHub's fork
+     feature as GitHub's Terms of Service allow, which grants no rights beyond this licence.
+  7. Make and distribute works based on the Software, or present it, or any part of it, as
+     your own.
+  8. Sell the Software or any part of it, or use it in a paid product or service.
 
 To ask for permission, open an issue at https://github.com/BugzySleeps/liquid.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+Your rights under this licence end automatically if you break it.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. IN NO
+EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM THE SOFTWARE OR ITS USE.
 
 ---------------------------------------------------------------------------------------
 

@@ -12,8 +12,12 @@ scripts it calls. See [Needs](#needs).
 
 ## Licence
 
-All rights reserved: this is here to look at, not to use. You may not copy it, use it in your own setup or
-build on it without my permission (see [LICENSE](LICENSE); ask in an issue). For my own machines:
+You're welcome to **use** liquid: install it, run it as your shell, tweak your own copy, and show it off. What
+you can't do without asking is **take its code** (or its sounds, shaders or logo) and put it into your own shell,
+dotfiles or project, or re-upload it. To share your setup, link here instead. The details are in
+[LICENSE](LICENSE); ask in an issue if you want to use part of it.
+
+## Run it
 
 ```sh
 git clone https://github.com/BugzySleeps/liquid ~/.config/quickshell/ekitai
