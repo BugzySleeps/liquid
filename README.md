@@ -10,6 +10,31 @@ It's the shell half of the `ekitai-qs` rice in my [dotfiles](https://github.com/
 provide the colours (the `rice` theme switcher writes `~/.local/state/rice/palette.json`), the fonts and the helper
 scripts it calls. See [Needs](#needs).
 
+## See it
+
+<p align="center"><img src="docs/lock-intro.gif" alt="the lock screen's login intro" width="800"></p>
+
+**[▶ Watch the tour](docs/tour.mp4)** (1:49, with sound): the lock screen and its water sounds, notifications,
+the launcher, control centre, calendar, music, wallpapers, terminal sounds, the overview, the shapes and glass,
+settings, the screenshot editor and the welcome. The song in the music part is muted.
+
+| | |
+| --- | --- |
+| <img src="docs/screenshots/desktop.png" alt="the desktop: bar, widgets, now playing"><br>the desktop: bar, widgets, now playing | <img src="docs/screenshots/lock.png" alt="the lock screen, floating on the liquid"><br>the lock screen, floating on the liquid |
+| <img src="docs/screenshots/lock-splash.png" alt="a wrong password splashes"><br>a wrong password splashes | <img src="docs/screenshots/control.png" alt="control centre"><br>control centre |
+| <img src="docs/screenshots/music.png" alt="music: visualizer and lyrics"><br>music: visualizer and lyrics | <img src="docs/screenshots/eq.png" alt="a 10-band eq on everything playing"><br>a 10-band eq on everything playing |
+| <img src="docs/screenshots/library.png" alt="cmus's library and queue"><br>cmus's library and queue | <img src="docs/screenshots/island-track.png" alt="the island: a new track"><br>the island: a new track |
+| <img src="docs/screenshots/island-notify.png" alt="the island: a notification"><br>the island: a notification | <img src="docs/screenshots/island-level.png" alt="the island: volume, filling like liquid"><br>the island: volume, filling like liquid |
+| <img src="docs/screenshots/launcher.png" alt="launcher"><br>launcher | <img src="docs/screenshots/launcher-emoji.png" alt="launcher: emoji"><br>launcher: emoji |
+| <img src="docs/screenshots/launcher-maths.png" alt="launcher: maths"><br>launcher: maths | <img src="docs/screenshots/launcher-colour.png" alt="launcher: colours"><br>launcher: colours |
+| <img src="docs/screenshots/wallpapers.png" alt="wallpaper picker (recolours everything)"><br>wallpaper picker (recolours everything) | <img src="docs/screenshots/overview.png" alt="workspace overview"><br>workspace overview |
+| <img src="docs/screenshots/calendar.png" alt="calendar"><br>calendar | <img src="docs/screenshots/terminal.png" alt="a terminal, with its own sounds"><br>a terminal, with its own sounds |
+| <img src="docs/screenshots/round.png" alt="round"><br>round | <img src="docs/screenshots/squiggle.png" alt="squiggle"><br>squiggle |
+| <img src="docs/screenshots/glass.png" alt="liquid glass"><br>liquid glass | <img src="docs/screenshots/editor.png" alt="screenshot editor"><br>screenshot editor |
+| <img src="docs/screenshots/settings.png" alt="settings"><br>settings | <img src="docs/screenshots/settings-sound.png" alt="settings: sound"><br>settings: sound |
+| <img src="docs/screenshots/welcome.png" alt="welcome, on the first start"><br>welcome, on the first start | <img src="docs/screenshots/welcome-wall.png" alt="welcome: pick a wallpaper"><br>welcome: pick a wallpaper |
+| <img src="docs/screenshots/welcome-shape.png" alt="welcome: pick a shape"><br>welcome: pick a shape | <img src="docs/screenshots/welcome-keys.png" alt="welcome: the keys"><br>welcome: the keys |
+
 ## Licence
 
 You're welcome to **use** liquid: install it, run it as your shell, tweak your own copy, and show it off. What
