@@ -28,9 +28,16 @@ Singleton {
         Quickshell.execDetached([cmd, on ? "on" : "off"]);
     }
 
+    // picking a preset means you want to hear it: it turns the EQ on too (one after the other, as they
+    // both write eq.json)
     function usePreset(name) {
         preset = name;
-        Quickshell.execDetached([cmd, "preset", name]);
+        if (on) {
+            Quickshell.execDetached([cmd, "preset", name]);
+        } else {
+            on = true;
+            Quickshell.execDetached(["sh", "-c", "\"$0\" preset \"$1\" && \"$0\" on", cmd, name]);
+        }
     }
 
     // a slider moving: the panel follows at once, PipeWire a moment later (so a drag isn't 60 commands)
@@ -66,21 +73,20 @@ Singleton {
         }
     }
 
-    // streams that start while it's on get it too (playing streams: stream nodes that send audio out)
-    readonly property var streamIds: Pipewire.nodes.values.filter(n => n.isStream && !n.isSink).map(n => n.id)
-    property var attached: ({})
-    onStreamIdsChanged: if (on)
+    // streams that start while it's on get it too: the ones playing audio out (not recordings, like cava's)
+    // (kept as the node objects, not their ids: PipeWire hands a new stream an old id, e.g. cmus reopening
+    // its output, and by id that looked like a stream that already had it)
+    readonly property var streams: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioOutStream)
+    property var attached: []
+    onStreamsChanged: if (on)
         attachNew()
     onOnChanged: if (on)
         attachNew()
 
     function attachNew() {
-        const seen = {};
-        for (const id of streamIds) {
-            seen[id] = true;
-            if (!attached[id])
-                Quickshell.execDetached([cmd, "attach", String(id)]);
-        }
-        attached = seen;
+        for (const n of streams)
+            if (!attached.includes(n))
+                Quickshell.execDetached([cmd, "attach", String(n.id)]);
+        attached = streams.slice();
     }
 }

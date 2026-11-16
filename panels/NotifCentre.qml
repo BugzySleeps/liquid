@@ -29,15 +29,31 @@ Column {
         const top = (Glass.origin(win)?.y ?? 0) + QsWindow.itemPosition(scroller).y;
         room = Math.max(110, win.screen.height - top - below);
     }
-    onVisibleChanged: Qt.callLater(measure)
+    // measured ahead, while the panel's closed, so opening it never resizes the window mid-unroll
+    Component.onCompleted: measureLater.restart()
     Connections {
         target: Ui
         function onQuickChanged() {
             measureLater.restart();
         }
         function onPanelChanged() {
+            root.settled = false;
+            if (Ui.panel === "control")
+                settle.restart();
+        }
+    }
+    Connections {
+        target: Notifs
+        function onCountChanged() {
             measureLater.restart();
         }
+    }
+    // the list's height only animates once the panel's fully open (folding, swiping, clearing)
+    property bool settled: false
+    Timer {
+        id: settle
+        interval: 500
+        onTriggered: root.settled = true
     }
     Timer {
         id: measureLater
@@ -116,6 +132,7 @@ Column {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         Behavior on height {
+            enabled: root.settled
             NumberAnimation {
                 duration: 220
                 easing.type: Easing.OutCubic

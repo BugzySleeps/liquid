@@ -44,7 +44,13 @@ PanelWindow {
         right: Style.edge
     }
     implicitWidth: panelWidth
-    implicitHeight: frame.height + 2
+    // the window stays the screen's height and only the box takes clicks: if it followed the box, every
+    // change inside (a notification leaving, details opening) would resize the surface frame by frame,
+    // and Hyprland redoing that each frame is what stutters
+    implicitHeight: Math.max(frame.height + 2, (screen?.height ?? 900) - Glass.reserved - Style.gap)
+    mask: Region {
+        item: reveal
+    }
 
     WlrLayershell.namespace: "ekitai-panel"
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
@@ -57,6 +63,7 @@ PanelWindow {
 
     // the reveal: a clip that grows from the top, and a line that draws across first
     Item {
+        id: reveal
         width: parent.width
         height: frame.height * win.t
         clip: true
