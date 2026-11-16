@@ -6,7 +6,8 @@ import qs.config
 import qs.services
 import qs.components
 
-// Right panel: who/uptime, toggles, sliders, system meters, notifications, power.
+// Right panel: who/uptime, toggles (wifi, bluetooth and night light open their details under them), power
+// profiles, sliders, system meters, notifications, power.
 Panel {
     id: root
     name: "control"
@@ -21,8 +22,19 @@ Panel {
         interval: 3000
         onTriggered: root.armed = ""
     }
-    onOpenChanged: if (!open)
-        armed = ""
+    onOpenChanged: {
+        if (open) {
+            Power.check();
+        } else {
+            armed = "";
+            Ui.quick = "";
+        }
+    }
+
+    // which toggle's details are open under them (Ui.quick): "" · wifi · bt · night
+    function expand(what) {
+        Ui.quick = Ui.quick === what ? "" : what;
+    }
 
     function power(what, cmd) {
         if (armed !== what) {
@@ -93,7 +105,21 @@ Panel {
             label: "wifi"
             status: Net.name
             on: Net.enabled
+            more: true
+            expanded: Ui.quick === "wifi"
             onClicked: Net.toggle()
+            onExpand: root.expand("wifi")
+        }
+        Tile {
+            Layout.fillWidth: true
+            icon: Bt.icon
+            label: "bluetooth"
+            status: Bt.status
+            on: Bt.enabled
+            more: true
+            expanded: Ui.quick === "bt"
+            onClicked: Bt.available ? Bt.toggle() : root.expand("bt")
+            onExpand: root.expand("bt")
         }
         Tile {
             Layout.fillWidth: true
@@ -118,6 +144,54 @@ Panel {
             status: Ui.dnd ? "no popups" : "popups on"
             on: Ui.dnd
             onClicked: Ui.dnd = !Ui.dnd
+        }
+        Tile {
+            Layout.fillWidth: true
+            icon: Night.active ? "󰖔" : "󰖙"
+            label: "night light"
+            status: Settings.nightMode === "auto" ? (Night.active ? "auto · on" : "auto · from " + String(Settings.nightFrom).padStart(2, "0") + ":00") : Night.active ? Settings.nightTemp + "K" : "off"
+            on: Night.active
+            more: true
+            expanded: Ui.quick === "night"
+            onClicked: Night.toggle()
+            onExpand: root.expand("night")
+        }
+    }
+
+    Loader {
+        width: parent.width
+        active: Ui.quick !== ""
+        visible: active
+        sourceComponent: QuickDetail {
+            kind: Ui.quick
+        }
+    }
+
+    // ── power profile ──
+    RowLayout {
+        width: parent.width
+        spacing: 4
+        Icon {
+            Layout.preferredWidth: 22
+            text: Power.available ? Power.icons[Power.profile] : "󰾅"
+            font.pixelSize: 15
+        }
+        Txt {
+            Layout.fillWidth: true
+            text: Power.available ? "power" : "power profiles need power-profiles-daemon"
+            elide: Text.ElideRight
+            color: Colors.mid
+            font.pixelSize: Power.available ? Style.text : Style.small
+        }
+        Repeater {
+            model: Power.available ? [0, 1, 2] : []
+            Chip {
+                required property int modelData
+                visible: modelData !== 2 || Power.hasPerformance
+                text: Power.icons[modelData] + " " + Power.names[modelData]
+                on: Power.profile === modelData
+                onClicked: Power.set(modelData)
+            }
         }
     }
 
@@ -312,97 +386,9 @@ Panel {
         }
     }
 
-    // ── notifications ────────────────────────────────────
-    Column {
+    // ── notifications (panels/NotifCentre.qml) ───────────
+    NotifCentre {
         width: parent.width
-        spacing: 6
-        RowLayout {
-            width: parent.width
-            Txt {
-                Layout.fillWidth: true
-                text: "notifications" + (Notifs.count ? "  " + Notifs.count : "")
-                color: Colors.mid
-                font.pixelSize: Style.small
-                font.letterSpacing: 1
-            }
-            Txt {
-                visible: Notifs.count > 0
-                text: "clear"
-                font.pixelSize: Style.small
-                color: clearArea.containsMouse ? Colors.bright : Colors.accent
-                MouseArea {
-                    id: clearArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Notifs.clear()
-                }
-            }
-        }
-        Txt {
-            visible: Notifs.count === 0
-            text: "── nothing new ──"
-            color: Colors.dim
-            width: parent.width
-            horizontalAlignment: Text.AlignHCenter
-            topPadding: 4
-            bottomPadding: 4
-        }
-        Repeater {
-            model: Notifs.history.slice(-4).reverse()
-            Rectangle {
-                required property var modelData
-                width: parent.width
-                height: col.implicitHeight + 12
-                color: nArea.containsMouse ? Colors.bg2 : "transparent"
-                Rectangle {
-                    width: 2
-                    height: parent.height
-                    color: Colors.accent
-                }
-                Column {
-                    id: col
-                    x: 10
-                    y: 6
-                    width: parent.width - 34
-                    Txt {
-                        width: parent.width
-                        text: (modelData.appName || "notice").toLowerCase()
-                        font.pixelSize: Style.small
-                        color: Colors.mid
-                    }
-                    Txt {
-                        width: parent.width
-                        text: modelData.summary
-                        font.bold: true
-                        color: Colors.bright
-                    }
-                    Txt {
-                        width: parent.width
-                        visible: text !== ""
-                        text: modelData.body
-                        textFormat: Text.PlainText
-                        maximumLineCount: 2
-                        wrapMode: Text.Wrap
-                    }
-                }
-                Icon {
-                    anchors.right: parent.right
-                    anchors.rightMargin: 6
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "󰅖"
-                    font.pixelSize: 12
-                    visible: nArea.containsMouse
-                }
-                MouseArea {
-                    id: nArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: modelData.dismiss()
-                }
-            }
-        }
     }
 
     // ── power ────────────────────────────────────────────

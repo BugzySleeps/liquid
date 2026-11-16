@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs.config
 import qs.services
 import qs.components
+import "../components/Shapes.js" as Shapes
 
 // Settings for the selected widget (edit mode), beside it: which workspaces, box or bare,
 // the widget's own options, duplicate / delete.
@@ -143,6 +144,63 @@ Frame {
                         box.w.frame = false;
                         Widgets.save();
                     }
+                }
+            }
+        }
+
+        // ── shape (round and squiggle) ───────────
+        Column {
+            width: parent.width
+            spacing: 5
+            readonly property string current: box.w?.props.shape ?? "box"
+            Label {
+                text: "SHAPE  ·  " + (Shapes.list.find(s => s[0] === parent.current)?.[1] ?? "box")
+            }
+            Txt {
+                visible: !Look.round
+                width: parent.width
+                wrapMode: Text.WordWrap
+                text: "shapes show in round and squiggle"
+                font.pixelSize: Style.small
+                color: Colors.dim
+            }
+            Flow {
+                visible: Look.round
+                width: parent.width
+                spacing: 4
+                Repeater {
+                    model: Shapes.list
+                    Rectangle {
+                        id: pick
+                        required property var modelData
+                        readonly property bool on: (box.w?.props.shape ?? "box") === modelData[0]
+                        width: 32
+                        height: 32
+                        color: pickArea.containsMouse ? Colors.bg3 : "transparent"
+                        radius: 6
+                        ShapeOutline {
+                            anchors.fill: parent
+                            anchors.margins: 4
+                            shape: pick.modelData[0]
+                            color: pick.on ? Colors.accent : pickArea.containsMouse ? Colors.mid : Qt.alpha(Colors.accent, 0.28)
+                        }
+                        MouseArea {
+                            id: pickArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Widgets.setShape(box.w, pick.modelData[0])
+                        }
+                    }
+                }
+            }
+            Row {
+                visible: Look.round && (box.w?.props.shape ?? "box") !== "box"
+                spacing: 4
+                Chip {
+                    text: "󰑓 spin slowly"
+                    on: box.w?.props.spin ?? false
+                    onClicked: Widgets.setProp(box.w, "spin", !box.w.props.spin)
                 }
             }
         }

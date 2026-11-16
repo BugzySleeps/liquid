@@ -21,14 +21,27 @@ Item {
     property int lobes: Math.max(6, Math.min(12, Math.round(Math.min(width, height) / 5)))
     property real spin: 0                        // turns a cookie (degrees)
     // glass: light catching the top of see-through surfaces (not solid ones, not empty outlines)
-    readonly property bool sheen: Look.glass && color.a > 0.05 && color.a < 0.99
+    readonly property bool sheen: Look.glass && color.a > 0.05 && color.a < 0.99 && !glassy
+    // the glass surfaces themselves (filled with Colors.glass): the shell's own liquid glass (GlassFill)
+    readonly property bool glassy: Look.glass && Qt.colorEqual(color, Colors.glass)
+    readonly property color fill: glassy ? "transparent" : color
     property bool curve: true                    // false for masks: the curve renderer doesn't draw into a hidden layer
+
+    Loader {
+        anchors.fill: parent
+        active: frame.glassy
+        sourceComponent: GlassFill {
+            radius: Look.round ? frame.radius : 0
+            inset: frame.wavy && !frame.blob ? frame.amplitude + frame.border.width / 2 : 0
+            circle: frame.blob && Look.round
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
         visible: !frame.wavy
         radius: Look.round ? frame.radius : 0
-        color: frame.color
+        color: frame.fill
         border.width: frame.border.width
         border.color: frame.border.color
         antialiasing: true
@@ -57,7 +70,7 @@ Item {
         rotation: frame.blob ? frame.spin : 0
 
         ShapePath {
-            fillColor: frame.color
+            fillColor: frame.fill
             strokeColor: frame.border.width > 0 ? frame.border.color : "transparent"
             strokeWidth: frame.border.width
             joinStyle: ShapePath.RoundJoin

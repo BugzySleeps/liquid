@@ -30,6 +30,10 @@ Item {
     // the first lock of the session (at login) opens with the intro instead; decided once, as it opens
     property real logo: 0                        // the ekitai logo (the drop and ripples), under the liquid
     Component.onCompleted: {
+        if (Lock.flooded) {                      // the idle tide already filled the screen: settle from there
+            settle.start();
+            return;
+        }
         (Lock.boot ? introAnim : fill).start();
         if (Lock.boot)
             dripTimer.start();
@@ -148,6 +152,40 @@ Item {
         }
     }
 
+    // locked by the idle tide (services/Tide.qml): it starts as full as the tide left it, and sinks to rest
+    ParallelAnimation {
+        id: settle
+        NumberAnimation {
+            target: view
+            property: "level"
+            from: 1.04
+            to: view.rest
+            duration: 1600
+            easing.type: Easing.InOutCubic
+        }
+        NumberAnimation {
+            target: view
+            property: "rough"
+            from: 0.45
+            to: 0
+            duration: 2200
+            easing.type: Easing.OutQuad
+        }
+        SequentialAnimation {
+            PauseAnimation {
+                duration: 700
+            }
+            NumberAnimation {
+                target: view
+                property: "fade"
+                from: 0
+                to: 1
+                duration: 900
+                easing.type: Easing.OutCubic
+            }
+        }
+    }
+
     // unlocking: a moment of "welcome back", then the liquid drains and the rest fades
     SequentialAnimation {
         id: drain
@@ -209,6 +247,7 @@ Item {
         target: Lock
         function onLeave() {
             fill.stop();
+            settle.stop();
             drain.start();
             Sounds.lock("drain");
         }
@@ -334,6 +373,7 @@ Item {
         property vector4d r5: view.r5
         property vector4d r6: view.r6
         property vector4d r7: view.r7
+        property real clear: 0
         fragmentShader: Qt.resolvedUrl("../shaders/liquid.frag.qsb")
     }
 

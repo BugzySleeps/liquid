@@ -1,7 +1,8 @@
 #version 440
 // The lock screen's liquid: a glowing pool filling the screen from the bottom. Its surface rolls with a
 // few slow waves plus ripples (typing drops one at the login box); below it, the wallpaper is bent by
-// the waves and tinted, with drifting caustics and rising bubbles. Above it, everything shows through.
+// the waves and tinted, with drifting caustics and rising bubbles. Above it, everything shows through
+// (or, with `clear`, nothing but the glow: the idle tide, drawn over your windows).
 // Rebuild after editing:  qsb --glsl "100es,120,150" --hlsl 50 --msl 12 -o liquid.frag.qsb liquid.frag
 
 layout(location = 0) in vec2 qt_TexCoord0;
@@ -19,6 +20,7 @@ layout(std140, binding = 0) uniform buf {
     vec4 deep;          // the background
     vec4 r0; vec4 r1; vec4 r2; vec4 r3;   // ripples: x (pixels), start time, strength, unused
     vec4 r4; vec4 r5; vec4 r6; vec4 r7;
+    float clear;        // 1: see-through above the surface (the idle tide); 0: the source shows there
 };
 
 layout(binding = 1) uniform sampler2D source;  // what's behind (the blurred wallpaper)
@@ -54,7 +56,7 @@ void main() {
 
     vec4 back = texture(source, qt_TexCoord0);
     if (below < -40.0 || level <= 0.0005) {
-        fragColor = back * qt_Opacity;
+        fragColor = mix(back, vec4(0.0), clear) * qt_Opacity;
         return;
     }
 
@@ -93,6 +95,7 @@ void main() {
 
     // above the surface only the halo shows, over what's behind
     float inside = smoothstep(-1.0, 1.0, below);
-    vec3 outCol = mix(back.rgb + tint.rgb * halo * 0.5 * (1.0 - inside), col, inside);
-    fragColor = vec4(outCol, 1.0) * qt_Opacity;
+    vec3 h = tint.rgb * halo * 0.5 * (1.0 - inside);
+    vec4 above = mix(vec4(back.rgb + h, 1.0), vec4(h, halo * 0.5 * (1.0 - inside)), clear);   // premultiplied
+    fragColor = mix(above, vec4(col, 1.0), inside) * qt_Opacity;
 }

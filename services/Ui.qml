@@ -10,6 +10,7 @@ import Quickshell.Hyprland
 //   qs -c ekitai ipc call launcher toggle
 //   qs -c ekitai ipc call launcher open ":"       opens it with text typed in (":" emoji, "/" files, "#" colours…)
 //   qs -c ekitai ipc call panel toggle control|media|calendar
+//   qs -c ekitai ipc call panel expand wifi|bt|night   the control centre, with those details open
 //   qs -c ekitai ipc call dnd toggle
 //   qs -c ekitai ipc call wall toggle            the wallpaper picker (picker/WallPicker.qml)
 //   qs -c ekitai ipc call overview toggle        every workspace at once (switcher/Overview.qml)
@@ -17,6 +18,7 @@ Singleton {
     id: root
 
     property string panel: ""
+    property string quick: ""                    // the control centre's open details: "" · wifi · bt · night
     property bool launcher: false
     property string launcherText: ""           // what the launcher opens with (`launcher open ":"`)
     property bool picker: false
@@ -93,6 +95,10 @@ Singleton {
         }
         function close(): void {
             root.panel = "";
+        }
+        function expand(what: string): void {
+            root.panel = "control";
+            root.quick = what;
         }
     }
 

@@ -3,11 +3,14 @@ import qs.config
 import qs.services
 import qs.components
 import qs.desktop.widgets
+import "../components/Shapes.js" as Shapes
 
 // One widget on a board: its box, its content, and (in edit mode) dragging and resizing.
 // Desktop widgets not meant for this workspace fade out (faintly visible in edit mode, so you can
 // still move them). Lock screen widgets set to float ride the liquid: their height comes from the
 // surface under their middle, and they tilt with it; you only drag them sideways.
+// In round and squiggle a widget can take a shape (props.shape: a cookie, a clover, an arch…, see
+// components/Shapes.js), morphing into it, with its content inside; an image fills the shape. props.spin turns it.
 Item {
     id: frame
 
@@ -21,6 +24,9 @@ Item {
     property var surface: null                   // x → the liquid's height there
     readonly property bool floating: !!surface && !!w.props.float
     readonly property bool selected: editing && Widgets.selected === w.uid
+    readonly property string shape: Look.round ? (w.props.shape ?? "box") : "box"
+    readonly property bool shaped: shape !== "box" || outline.t < 1    // (still morphing back to the box)
+    readonly property bool fills: shaped && w.type === "image"
 
     x: w.x
     // floating: a quarter of it under the surface
@@ -29,6 +35,22 @@ Item {
     width: w.w
     height: w.h
     z: selected ? 3 : 1
+    Behavior on x {
+        enabled: Widgets.gliding
+        NumberAnimation { duration: 750; easing.type: Easing.InOutCubic }
+    }
+    Behavior on y {
+        enabled: Widgets.gliding
+        NumberAnimation { duration: 750; easing.type: Easing.InOutCubic }
+    }
+    Behavior on width {
+        enabled: Widgets.gliding
+        NumberAnimation { duration: 750; easing.type: Easing.InOutCubic }
+    }
+    Behavior on height {
+        enabled: Widgets.gliding
+        NumberAnimation { duration: 750; easing.type: Easing.InOutCubic }
+    }
 
     property real shown: here ? 1 : editing ? 0.3 : 0
     Behavior on shown {
@@ -47,17 +69,49 @@ Item {
         }
     }
 
-    // the box
+    // the box, or its shape
     Frame {
         anchors.fill: parent
+        visible: !frame.shaped
         color: frame.w.frame ? Colors.glass : "transparent"
         border.width: frame.w.frame || frame.editing ? Style.line : 0
         border.color: frame.selected ? Colors.accent : Colors.faint
     }
+    ShapeOutline {
+        id: outline
+        anchors.fill: parent
+        visible: frame.shaped
+        shape: frame.shape
+        turn: frame.turn
+        // the content's own proportions (in a square shape): an analog clock's round, the rest as they come
+        aspect: frame.w.type === "clock" && frame.w.props.style === "analog" ? 1 : Math.min(1, frame.t.h / frame.t.w)
+        color: frame.w.frame && !frame.fills ? Colors.glass : "transparent"
+        borderWidth: frame.w.frame || frame.editing ? Style.line : 0
+        borderColor: frame.selected ? Colors.accent : Colors.faint
+        fillItem: frame.fills ? picture : null
+        screenAt: Qt.point(frame.x, frame.y)    // (the desktop covers the screen)
+    }
+    ShaderEffectSource {                         // an image, to fill the shape with
+        id: picture
+        width: frame.width
+        height: frame.height
+        sourceItem: frame.fills ? content : null
+        hideSource: true
+        visible: false
+    }
+
+    property real turn: 0
+    NumberAnimation on turn {
+        running: !!frame.w.props.spin && frame.shaped && frame.here && !Perf.low
+        from: 0
+        to: 1
+        duration: 40000
+        loops: Animation.Infinite
+    }
 
     // a title sitting on the top border, like a terminal box:  ┌─ clock ───
     Rectangle {
-        visible: frame.w.frame && !frame.editing
+        visible: frame.w.frame && !frame.editing && !frame.shaped
         x: Look.round ? 18 : 12
         y: -6
         width: title.implicitWidth + 10
@@ -74,8 +128,14 @@ Item {
     }
 
     Loader {
+        id: content
         anchors.fill: parent
-        anchors.margins: frame.w.frame ? 14 : 4
+        // in a shape: the biggest box that fits inside it (an image: all of it, cut to the shape)
+        readonly property real pad: frame.w.frame ? 14 : 4
+        anchors.leftMargin: frame.fills ? 0 : frame.shaped ? (1 - outline.inner[0]) * frame.width / 2 + 6 : pad
+        anchors.rightMargin: anchors.leftMargin
+        anchors.topMargin: frame.fills ? 0 : frame.shaped ? (1 - outline.inner[1]) * frame.height / 2 + 6 : pad
+        anchors.bottomMargin: anchors.topMargin
         sourceComponent: ({
                 clock: clockW,
                 calendar: calendarW,
@@ -236,6 +296,12 @@ Item {
                 if (!pressed)
                     return;
                 const p = mapToItem(frame, e.x, e.y);
+                if (!Shapes.free(frame.shape)) {     // a shape stays square
+                    const side = Math.max(Widgets.shapeMin(frame.w.type, frame.shape), Math.min(frame.parent.width - frame.w.x, frame.parent.height - frame.w.y, Widgets.snapped(Math.max(p.x, p.y))));
+                    frame.w.w = side;
+                    frame.w.h = side;
+                    return;
+                }
                 frame.w.w = Math.max(frame.t.minW, Math.min(frame.parent.width - frame.w.x, Widgets.snapped(p.x)));
                 frame.w.h = Math.max(frame.t.minH, Math.min(frame.parent.height - frame.w.y, Widgets.snapped(p.y)));
             }

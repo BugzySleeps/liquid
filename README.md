@@ -91,8 +91,21 @@ These are bound in Hyprland (`hyprland.lua` in the dotfiles), each one an IPC ca
   the logo's drop falls just as the liquid rises over it, fills the screen, and drains to rest. If music's playing,
   it goes **underwater** while locked (a low-pass glides in as the liquid rises). It has its own widgets, which can
   float on the liquid. `qs -c ekitai ipc call lock preview` (or `previewIntro`) shows it without locking.
-- **control centre:** wifi, sound, mic and do-not-disturb toggles, volume and brightness sliders, cpu / ram / disk,
-  notification history, a scratchpad, lock / sleep / log out / reboot / power off.
+- **idle tide:** after a few minutes away (5 by default), the lock screen's liquid starts rising up over your
+  windows, bending them under its surface, and takes a minute to fill the screen. Touch the keyboard or mouse and
+  it drains with a ripple; let it fill and it becomes the lock screen, which starts full and sinks to rest. A playing
+  video (anything inhibiting idle) holds it back. Settings → lock; `qs -c ekitai ipc call tide preview` for a quick one.
+- **control centre:** wifi, bluetooth, sound, mic, do-not-disturb and night light toggles. The chevron on wifi
+  opens the networks in range (click to join, a password box for locked ones, × to forget), on bluetooth the
+  devices (pair, connect, battery), and on night light its warmth and hours (off / on / auto, easing in). Night
+  light is a Hyprland screen shader, so it needs nothing installed and screenshots keep their true colours. Then
+  power profiles (saver / balanced / performance), volume and brightness sliders, cpu / ram / disk, a scratchpad,
+  the notification timeline, lock / sleep / log out / reboot / power off. `qs -c ekitai ipc call panel expand wifi`,
+  `night toggle`.
+- **notification timeline:** grouped by app, newest app first, each group folded to its newest with the rest
+  stacked behind it (click the header to fan them out), with how long ago. Swipe one right (or ×) and it pulls into
+  a droplet and drips away while the rest close up; **clear all** drains the whole stack, bottom first
+  (`qs -c ekitai ipc call notifs clear`). Clicking one runs its default action.
 - **music panel:** the cover blurred and tinted through the whole panel, a waterline visualizer, synced lyrics
   (lrclib), a seek bar and controls; cmus's **library** and queue; **art** (the shell and window borders take the
   album cover's colours, track by track); and a 10-band **eq** that works on everything playing, live, inside each
@@ -110,10 +123,20 @@ These are bound in Hyprland (`hyprland.lua` in the dotfiles), each one an IPC ca
 - **window switcher**, **clipboard history** (text and images, in memory only, never passwords) and a
   **screenshot editor** (pen, arrow, box, crop; save and/or copy).
 - **shape and glass:** `square`, `round` or `squiggle` (wavy edges, scalloped buttons) for everything at once, and
-  liquid glass on top of any of them (see-through with a frosted blur and a sheen).
+  liquid glass on top of any of them: the wallpaper frosted behind the bar, panels and widgets, bent at their rims
+  like a lens, with light on the edges. The shell draws it itself (`shaders/glass.frag`) over a blurred copy of the
+  wallpaper made once, so there's no compositor blur and it's light on old GPUs.
 - **desktop widgets:** clock, calendar, weather (open-meteo; hidden while you share your screen), fetch, now
   playing, lyrics, visualizer, notes, images, and Claude Code's token usage. Drag, resize, and pick the workspaces
-  each one shows on.
+  each one shows on. In round and squiggle each widget can take a **shape** of its own (19: pill, circle,
+  squircle, arch, gem, diamond, triangle, pentagon, 4 / 6 / 9 / 12-sided cookies, 4 / 8-leaf clovers, flower,
+  puffy, sunny, burst), picked in its settings in edit mode: it morphs into it with a little bounce, its content
+  fits inside (an analog clock gets a round face), a picture fills it, and it can spin slowly. The shapes are drawn
+  by `components/Shapes.js`.
+- **per wallpaper:** each wallpaper keeps its own shape, liquid glass and desktop widgets (which ones, where, how
+  big, their shapes and settings), like a theme of its own: switch wallpapers and the look comes back with it, the
+  widgets gliding into place. The lock screen's widgets stay shared. One switch
+  turns it off (settings → look).
 - **welcome:** on the first start, the liquid rises and walks you through a wallpaper, a shape and the keys.
   `qs -c ekitai ipc call welcome open` to see it again.
 - **sounds**, all switchable in settings → sound:
@@ -125,8 +148,8 @@ These are bound in Hyprland (`hyprland.lua` in the dotfiles), each one an IPC ca
   - **little sounds:** bubbles, a shutter click for screenshots, a tick for volume.
 
   Everything but **mine** is synthesised from scratch by `sounds/make.py` (pure Python, no samples).
-- **performance mode:** while a window is fullscreen or on battery (or always / never), cava, the visualizers and
-  the glass blur pause.
+- **performance mode:** while a window is fullscreen or on battery (or always / never), cava and the visualizers
+  pause.
 
 ## The logo
 
@@ -141,7 +164,7 @@ are in `assets/logo/`, made by `assets/logo/make.py`.
 shell.qml        the root: every window and the services it keeps running
 bar/             the bar, workspaces, the dynamic island
 panels/          control centre, calendar, music, eq, library
-lock/            the lock screen
+lock/            the lock screen, the idle tide
 launcher/        launcher, clipboard picker (emoji.tsv: gemoji's names)
 switcher/        window switcher, workspace overview
 notifs/ osd/     notification popups, the volume vial
@@ -167,7 +190,7 @@ Its own settings are saved in `~/.local/state/ekitai/` (`settings.json`, `look.j
   (`rice`, `eq`, `music-lib`, `pick-colour`, `cava-run`, `active-sink`, `claude-usage`), the palette they write, and
   the fonts: Departure Mono, Symbols Nerd Font and Noto Sans CJK
 - PipeWire + WirePlumber (`paplay`, `pactl`), cava, cmus, brightnessctl, NetworkManager, wl-clipboard, grim,
-  slurp, libnotify, wtype; optionally fd and hyprpicker
+  slurp, libnotify, wtype, Python with Pillow (the glass look); optionally fd, hyprpicker, BlueZ (bluetooth) and power-profiles-daemon
 
 ## Credits
 

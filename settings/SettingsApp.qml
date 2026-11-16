@@ -215,8 +215,22 @@ PanelWindow {
                             }
                         }
                         Option {
+                            title: "per wallpaper"
+                            hint: "each wallpaper keeps its own shape, liquid glass and desktop widgets (which ones, where, how big, their shapes), like its own theme. switch wallpapers and they come back."
+                            Chip {
+                                text: "off"
+                                on: !Settings.perWall
+                                onClicked: Settings.set("perWall", false)
+                            }
+                            Chip {
+                                text: "󰸉 on"
+                                on: Settings.perWall
+                                onClicked: Settings.set("perWall", true)
+                            }
+                        }
+                        Option {
                             title: "performance mode"
-                            hint: (Perf.low ? "on now (" + Perf.why + "): " : "") + "cava, the visualizers and the glass blur pause. auto: while a window is fullscreen or on battery."
+                            hint: (Perf.low ? "on now (" + Perf.why + "): " : "") + "cava and the visualizers pause. auto: while a window is fullscreen or on battery."
                             Repeater {
                                 model: ["auto", "always", "never"]
                                 Chip {
@@ -238,7 +252,7 @@ PanelWindow {
                         }
                         Option {
                             title: "liquid glass"
-                            hint: "see-through, frosted bar, panels and widgets, with a sheen of light on top."
+                            hint: "the bar, panels and widgets turn to glass: the wallpaper frosted behind them, bent at the rim, light on the edge. drawn by the shell, so it's light on the gpu."
                             Chip {
                                 text: "off"
                                 on: !Look.glass
@@ -469,6 +483,50 @@ PanelWindow {
                                 text: Settings.lockMuffle ? "on" : "off"
                                 on: Settings.lockMuffle
                                 onClicked: Settings.set("lockMuffle", !Settings.lockMuffle)
+                            }
+                        }
+                        Option {
+                            title: "idle tide"
+                            hint: Settings.idleTide ? "after " + Settings.idleAfter + " minutes away the liquid rises over your windows, filling the screen in " + Settings.tideRise + " s, then locks. touch anything and it drains. a playing video holds it back." : "off: the screen never locks by itself"
+                            Chip {
+                                text: Settings.idleTide ? "on" : "off"
+                                on: Settings.idleTide
+                                onClicked: Settings.set("idleTide", !Settings.idleTide)
+                            }
+                            Chip {
+                                text: "▶ try"
+                                onClicked: {
+                                    Settings.open = false;
+                                    Tide.rise(true);
+                                }
+                            }
+                        }
+                        Option {
+                            visible: Settings.idleTide
+                            title: "rises after"
+                            hint: "minutes without the keyboard or mouse"
+                            Repeater {
+                                model: Settings.idleAfters
+                                Chip {
+                                    required property int modelData
+                                    text: modelData + " min"
+                                    on: Settings.idleAfter === modelData
+                                    onClicked: Settings.set("idleAfter", modelData)
+                                }
+                            }
+                        }
+                        Option {
+                            visible: Settings.idleTide
+                            title: "takes"
+                            hint: "how long it rises before it locks: time to notice it"
+                            Repeater {
+                                model: Settings.tideRises
+                                Chip {
+                                    required property int modelData
+                                    text: modelData + " s"
+                                    on: Settings.tideRise === modelData
+                                    onClicked: Settings.set("tideRise", modelData)
+                                }
                             }
                         }
                         Option {

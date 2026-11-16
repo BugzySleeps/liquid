@@ -8,8 +8,8 @@ import qs.config
 
 // The shape of everything: "square" (hard corners), "round" (rounded boxes, pills, circles) or
 // "squiggle" (wavy-edged boxes, scalloped buttons and art, wavy meters). Windows follow too
-// (Hyprland rounding). Plus `glass` (its blur pauses in performance mode, see Perf): see-through, frosted surfaces with a sheen on top (Hyprland blurs
-// what's behind them, and see-through windows too). Saved to ~/.local/state/ekitai/look.json.
+// (Hyprland rounding). Plus `glass`: liquid-glass surfaces, the blurred wallpaper seen through them, bent at the
+// rim, with light on the edge (components/GlassFill.qml, services/Glass.qml; drawn by the shell, no compositor blur). Saved to ~/.local/state/ekitai/look.json.
 //   qs -c ekitai ipc call look set round      square | round | squiggle
 //   qs -c ekitai ipc call look next
 //   qs -c ekitai ipc call look glass on       on | off | toggle
@@ -57,10 +57,11 @@ Singleton {
     // Hyprland windows: rounded corners in round / squiggle. Reapplied after a config reload
     // (rice switches reload hyprland, which resets rounding to the theme's).
     onShapeChanged: applyWindows()
+    // no compositor blur, even for glass: the shell draws its own (GlassFill), so it costs nothing per frame
     function applyWindows() {
         if (loaded)
             // from `shape` itself: in onShapeChanged, round/wavy/windowRadius may not have updated yet
-            Quickshell.execDetached(["hyprctl", "eval", `hl.config({ decoration = { rounding = ${shape === "square" ? 0 : 12}, rounding_power = ${shape === "squiggle" ? 3 : 2}, blur = { enabled = ${glass && !Perf.low}, size = 7, passes = 3, vibrancy = 0.2, noise = 0.015, brightness = 0.9, popups = false, xray = false } } })`]);
+            Quickshell.execDetached(["hyprctl", "eval", `hl.config({ decoration = { rounding = ${shape === "square" ? 0 : 12}, rounding_power = ${shape === "squiggle" ? 3 : 2}, blur = { enabled = false } } })`]);
     }
 
     Connections {

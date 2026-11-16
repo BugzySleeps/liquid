@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import "../components/Shapes.js" as Shapes
 
 // Widgets on two boards: the desktop's (per workspace) and the lock screen's (where they can float on
 // the liquid). What's placed where, and edit mode (for one board at a time).
@@ -46,6 +47,18 @@ Singleton {
 
     property list<QtObject> items: []
     property bool editing: false
+
+    // widgets slide to new spots and sizes instead of jumping (a wallpaper bringing back its look, Themes)
+    property bool gliding: false
+    function glide() {
+        gliding = true;
+        glideEnd.restart();
+    }
+    Timer {
+        id: glideEnd
+        interval: 900
+        onTriggered: root.gliding = false
+    }
 
     // the scratchpad: the control centre's notes, and every note widget set to "scratchpad"
     property string scratch: ""
@@ -164,6 +177,20 @@ Singleton {
         save();
     }
 
+    // a widget's shape (components/Shapes.js): all but box and pill square it up, big enough for what's inside
+    function shapeMin(type, shape) {
+        const t = types[type], k = Shapes.inner(Shapes.rays(shape, 1, 1, 0), Math.min(1, t.h / t.w));
+        return type === "image" ? Math.max(t.minW, t.minH) : snapped(Math.max(t.minW / k[0], t.minH / k[1]) + 12);
+    }
+    function setShape(w, shape) {
+        if (!Shapes.free(shape)) {
+            const side = Math.max(shapeMin(w.type, shape), snapped(Math.sqrt(w.w * w.h)));
+            w.w = side;
+            w.h = side;
+        }
+        setProp(w, "shape", shape);
+    }
+
     function setProp(w, key, value) {
         const p = Object.assign({}, w.props);
         p[key] = value;
@@ -241,7 +268,12 @@ Singleton {
                 { type: "media", board: "lock", screen: s?.name ?? "", x: 96, y: 0, w: 352, h: 144, props: { float: true } },
                 { type: "bars", board: "lock", screen: s?.name ?? "", x: (s?.width ?? 1600) - 96 - 336, y: 0, w: 336, h: 112, props: { float: true } }];
         }
-        items = list.filter(d => types[d.type]).map(d => maker.createObject(root, {
+        items = list.filter(d => types[d.type]).map(make);
+        save();
+    }
+
+    function make(d) {
+        return maker.createObject(root, {
             uid: d.uid ?? Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
             type: d.type,
             board: d.board ?? "desktop",
@@ -253,7 +285,55 @@ Singleton {
             workspaces: d.workspaces ?? [],
             props: Object.assign({}, types[d.type].props, d.props ?? {}),
             frame: d.frame ?? true
-        }));
+        });
+    }
+
+    function dump(w) {
+        return {
+            uid: w.uid,
+            type: w.type,
+            board: w.board,
+            screen: w.screen,
+            x: Math.round(w.x),
+            y: Math.round(w.y),
+            w: Math.round(w.w),
+            h: Math.round(w.h),
+            workspaces: w.workspaces,
+            frame: w.frame,
+            props: w.props
+        };
+    }
+
+    // the desktop's widgets, as saved data (a wallpaper keeps its own set, Themes)
+    function desktop() {
+        return items.filter(w => w.board === "desktop").map(dump);
+    }
+    // swap the desktop to another set: the ones in both glide to their new spots, the rest leave or arrive
+    function setDesktop(list) {
+        glide();
+        selected = "";
+        const want = list.filter(d => types[d.type]);
+        const keep = new Set(want.map(d => d.uid));
+        const gone = items.filter(w => w.board === "desktop" && !keep.has(w.uid));
+        let next = items.filter(w => w.board !== "desktop" || keep.has(w.uid));
+        for (const d of want) {
+            const w = next.find(i => i.uid === d.uid);
+            if (!w) {
+                next.push(make(d));
+                continue;
+            }
+            w.screen = d.screen ?? w.screen;
+            w.x = d.x;
+            w.y = d.y;
+            w.w = d.w;
+            w.h = d.h;
+            w.workspaces = d.workspaces ?? [];
+            w.frame = d.frame ?? true;
+            w.props = Object.assign({}, types[d.type].props, d.props ?? {});
+        }
+        items = next;
+        for (const w of gone)
+            w.destroy();
         save();
     }
 
@@ -269,19 +349,7 @@ Singleton {
             version: 2,
             lockSeeded: true,
             scratch: root.scratch,
-            widgets: root.items.map(w => ({
-                uid: w.uid,
-                type: w.type,
-                board: w.board,
-                screen: w.screen,
-                x: Math.round(w.x),
-                y: Math.round(w.y),
-                w: Math.round(w.w),
-                h: Math.round(w.h),
-                workspaces: w.workspaces,
-                frame: w.frame,
-                props: w.props
-            }))
+            widgets: root.items.map(root.dump)
         }, null, 2) + "\n")
     }
 
@@ -313,8 +381,9 @@ Singleton {
                     root.setProp(w, "float", false);   // placed at a spot: it stays there
                 root.save();
             }
-            root.editing = false;
-            return root.selected;
+            const uid = root.selected;
+            root.editing = false;                // (which clears the selection)
+            return uid;
         }
         // move a widget (its top-left)
         function move(uid: string, x: int, y: int): void {
@@ -331,8 +400,22 @@ Singleton {
             if (!w)
                 return;
             try {
-                root.setProp(w, key, JSON.parse(json));
+                if (key === "shape")
+                    root.setShape(w, JSON.parse(json));
+                else
+                    root.setProp(w, key, JSON.parse(json));
             } catch (e) {}
+        }
+        function remove(uid: string): void {
+            root.remove(uid);
+        }
+        function select(uid: string): void {     // edit mode, with this widget's settings open
+            const w = root.find(uid);
+            if (!w)
+                return;
+            root.board = w.board;
+            root.editing = true;
+            root.selected = uid;
         }
         function add(type: string): void {
             const s = Ui.screen;

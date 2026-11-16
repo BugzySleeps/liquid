@@ -24,6 +24,9 @@ Singleton {
     // while music plays, the shell and window borders take their colours from the album art
     property bool artAccent: false
 
+    // each wallpaper keeps its own shape and widget layout (Themes)
+    property bool perWall: true
+
     // music, lyrics and visualizer widgets hide while nothing's playing (off: they always show)
     property bool hideIdleMusic: false
 
@@ -53,6 +56,20 @@ Singleton {
     // the lock screen's liquid makes water sounds as it moves (on by default)
     property bool lockSounds: true
 
+    // the idle tide (Tide): after idleAfter minutes away the liquid rises over the desktop for tideRise
+    // seconds, then locks. Touching anything drains it.
+    property bool idleTide: true
+    property real idleAfter: 5
+    readonly property var idleAfters: [2, 5, 10, 15, 30]
+    property int tideRise: 60
+    readonly property var tideRises: [30, 60, 120]
+
+    // night light (Night): off · on · auto (from nightFrom to nightTo o'clock); how warm, in kelvin
+    property string nightMode: "off"
+    property int nightTemp: 4000
+    property int nightFrom: 20
+    property int nightTo: 7
+
     function set(key, value) {
         root[key] = value;
         saveLater.restart();
@@ -66,7 +83,7 @@ Singleton {
         onLoaded: {
             try {
                 const d = JSON.parse(text());
-                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "hideIdleMusic"])
+                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "hideIdleMusic", "perWall"])
                     if (typeof d[k] === "boolean")
                         root[k] = d[k];
                 if (["island", "vial"].includes(d.osdStyle))
@@ -86,6 +103,17 @@ Singleton {
                     root.termStyle = d.termStyle;
                 if (typeof d.lockSounds === "boolean")
                     root.lockSounds = d.lockSounds;
+                if (typeof d.idleTide === "boolean")
+                    root.idleTide = d.idleTide;
+                if (root.idleAfters.includes(d.idleAfter))
+                    root.idleAfter = d.idleAfter;
+                if (root.tideRises.includes(d.tideRise))
+                    root.tideRise = d.tideRise;
+                if (["off", "on", "auto"].includes(d.nightMode))
+                    root.nightMode = d.nightMode;
+                for (const k of ["nightTemp", "nightFrom", "nightTo"])
+                    if (typeof d[k] === "number")
+                        root[k] = d[k];
                 if (typeof d.notifSounds === "boolean")
                     root.notifSounds = d.notifSounds;
                 if (root.notifStyles.includes(d.notifStyle))
@@ -100,7 +128,7 @@ Singleton {
     Timer {
         id: saveLater
         interval: 300
-        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, artAccent: root.artAccent, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds }) + "\n")
+        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, artAccent: root.artAccent, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
     }
 
     IpcHandler {

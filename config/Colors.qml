@@ -24,7 +24,7 @@ Singleton {
     // the bar and panels sit on near-opaque black so the wallpaper never fights the text; with the glass
     // look (Look.glass) they're see-through instead, a touch of the accent in the tint, frosted by hyprland
     property bool glassy: false
-    readonly property color glass: glassy ? Qt.alpha(Qt.tint(bg, Qt.alpha(accent, 0.07)), 0.5) : Qt.alpha(Qt.tint(bg, Qt.alpha(accent, 0.035)), 0.97)
+    readonly property color glass: glassy ? Qt.alpha(Qt.tint(bg, Qt.alpha(accent, 0.07)), 0.48) : Qt.alpha(Qt.tint(bg, Qt.alpha(accent, 0.035)), 0.97)
 
     readonly property string wallpaper: data.wallpaper ?? ""
     readonly property string theme: data.name ?? ""

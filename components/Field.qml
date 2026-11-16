@@ -1,13 +1,17 @@
 import QtQuick
 import qs.config
 
-// A one-line text box. Emits submitted(text) on Enter or when it loses focus.
+// A one-line text box. Emits submitted(text) on Enter or when it loses focus (`secret`: hidden, and only on Enter).
 Frame {
     id: root
     pill: true
 
     property alias text: input.text
     property string placeholder: ""
+    property bool secret: false
+    function forceFocus() {
+        input.forceActiveFocus();
+    }
     signal submitted(string text)
 
     implicitHeight: 26
@@ -28,7 +32,9 @@ Frame {
         font.family: Style.font
         font.pixelSize: Style.text
         onAccepted: root.submitted(text)
-        onEditingFinished: root.submitted(text)
+        echoMode: root.secret ? TextInput.Password : TextInput.Normal
+        onEditingFinished: if (!root.secret)
+            root.submitted(text)
     }
 
     Text {

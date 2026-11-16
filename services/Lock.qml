@@ -24,6 +24,7 @@ Singleton {
     property string phase: ""                    // "" · "checking" · "fail" · "welcome"
     property int fails: 0
     property bool boot: false                    // the first lock of the session: the lock screen plays its intro
+    property bool flooded: false                 // the idle tide filled the screen: the lock screen starts full
     property date since: new Date()
 
     readonly property string flag: Quickshell.env("HOME") + "/.local/state/rice/locked"
@@ -44,10 +45,11 @@ Singleton {
     signal failed
     signal leave                                 // play the unlock animation; the screen calls finish()
 
-    function lock(atBoot) {
+    function lock(atBoot, byTide) {
         if (locked)
             return;
         boot = !!atBoot;
+        flooded = !!byTide && !boot;
         buffer = "";
         phase = "";
         fails = 0;
@@ -79,14 +81,14 @@ Singleton {
     }
 
     // the lock screen in a normal window, for a look (Esc); `intro`: opening with the login intro
-    function openPreview(intro) {
+    function openPreview(intro, byTide) {
         if (locked)
             return;
         buffer = "";
         phase = "";
         since = new Date();
-        if (intro)
-            boot = true;
+        boot = !!intro;
+        flooded = !!byTide && !boot;
         preview = true;
     }
 
@@ -97,6 +99,7 @@ Singleton {
         buffer = "";
         phase = "";
         since = new Date();
+        flooded = false;
         preview = true;
         Widgets.board = "lock";
         Widgets.editing = true;
