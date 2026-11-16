@@ -13,9 +13,12 @@ ShaderEffect {
     property real radius: 0
     property real inset: 0
     property bool circle: false
+    property vector4d wave: Qt.vector4d(0, 0, 0, 0)    // squiggle's outline (glass.frag)
     property bool masked: true
     property var screenAt: null
-    property color tintColor: Colors.glass
+    // the tint: the theme's dark with a touch of its colour, or a neutral smoke; how much, from Look.tune
+    readonly property color hue: Look.tune.hue === "neutral" ? Qt.rgba(0.05, 0.055, 0.07, 1) : Qt.tint(Colors.bg, Qt.alpha(Colors.accent, 0.07))
+    property color tintColor: Qt.alpha(hue, 0.05 + 0.8 * Look.tune.tint)
 
     readonly property var origin: Glass.origin(QsWindow.window)
     readonly property bool seen: Glass.backdrop !== "" && (origin !== null || screenAt !== null)
@@ -38,6 +41,7 @@ ShaderEffect {
     readonly property real round: circle ? 1 : 0
     readonly property real back: seen && pic.status === Image.Ready ? 1 : 0
     readonly property real edge: masked ? 1 : 0
+    readonly property vector4d tune: Qt.vector4d(Look.tune.bend, Look.tune.shine, 1.15 + 0.35 * Look.tune.bend, 0)
 
     vertexShader: Qt.resolvedUrl("../shaders/glass.vert.qsb")
     fragmentShader: Qt.resolvedUrl("../shaders/glass.frag.qsb")

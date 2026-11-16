@@ -29,6 +29,8 @@ Item {
     property real t: 1
     readonly property var now: from.length && t < 1 ? Shapes.mix(from, to, t) : to
     readonly property var inner: to.length ? Shapes.inner(to, aspect) : [1, 1]
+    // the radius of the biggest circle that fits (round content fills that instead of `inner`'s box)
+    readonly property real reach: to.length ? Shapes.reach(to, width, height) : Math.min(width, height) / 2
 
     function target() {
         return Shapes.rays(shape, width, height, Look.r(width, height));
@@ -105,7 +107,7 @@ Item {
         }
         ShapePath {                              // liquid glass: light on the rim
             fillColor: "transparent"
-            strokeColor: Qt.rgba(1, 1, 1, 0.3)
+            strokeColor: Qt.rgba(1, 1, 1, 0.45 * Look.tune.shine)
             strokeWidth: 1.2
             PathPolyline {
                 path: root.glassy ? Shapes.points(root.now, root.width, root.height, root.turn, root.borderWidth + 1) : []

@@ -27,8 +27,11 @@ Item {
     readonly property string shape: Look.round ? (w.props.shape ?? "box") : "box"
     readonly property bool shaped: shape !== "box" || outline.t < 1    // (still morphing back to the box)
     readonly property bool fills: shaped && w.type === "image"
+    // an analog clock's round face fills the biggest circle in the shape, not its biggest box
+    readonly property bool roundFace: shaped && w.type === "clock" && w.props.style === "analog"
 
-    x: w.x
+    // the desktop's move with the row of windows as it scrolls (Drift)
+    x: w.x + (w.board === "desktop" ? Drift.shift : 0)
     // floating: a quarter of it under the surface
     y: floating ? surface(w.x + w.w / 2) - w.h * 0.75 : w.y
     rotation: floating ? Math.atan((surface(w.x + w.w / 2 + 80) - surface(w.x + w.w / 2 - 80)) / 160) * 180 / Math.PI * 0.6 : 0
@@ -84,7 +87,7 @@ Item {
         shape: frame.shape
         turn: frame.turn
         // the content's own proportions (in a square shape): an analog clock's round, the rest as they come
-        aspect: frame.w.type === "clock" && frame.w.props.style === "analog" ? 1 : Math.min(1, frame.t.h / frame.t.w)
+        aspect: frame.roundFace ? 1 : Math.min(1, frame.t.h / frame.t.w)
         color: frame.w.frame && !frame.fills ? Colors.glass : "transparent"
         borderWidth: frame.w.frame || frame.editing ? Style.line : 0
         borderColor: frame.selected ? Colors.accent : Colors.faint
@@ -130,11 +133,13 @@ Item {
     Loader {
         id: content
         anchors.fill: parent
-        // in a shape: the biggest box that fits inside it (an image: all of it, cut to the shape)
+        // in a shape: the biggest box that fits inside it, or for a round face the biggest circle (an image: all
+        // of it, cut to the shape)
         readonly property real pad: frame.w.frame ? 14 : 4
-        anchors.leftMargin: frame.fills ? 0 : frame.shaped ? (1 - outline.inner[0]) * frame.width / 2 + 6 : pad
+        readonly property real face: Math.max(0, outline.reach - 4)
+        anchors.leftMargin: frame.fills ? 0 : frame.shaped ? (frame.roundFace ? frame.width / 2 - face : (1 - outline.inner[0]) * frame.width / 2 + 6) : pad
         anchors.rightMargin: anchors.leftMargin
-        anchors.topMargin: frame.fills ? 0 : frame.shaped ? (1 - outline.inner[1]) * frame.height / 2 + 6 : pad
+        anchors.topMargin: frame.fills ? 0 : frame.shaped ? (frame.roundFace ? frame.height / 2 - face : (1 - outline.inner[1]) * frame.height / 2 + 6) : pad
         anchors.bottomMargin: anchors.topMargin
         sourceComponent: ({
                 clock: clockW,

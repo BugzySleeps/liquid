@@ -20,6 +20,8 @@ layout(std140, binding = 0) uniform buf {
     float round;
     float back;
     float edge;
+    vec4 tune;
+    vec4 wave;
 };
 
 void main() {

@@ -162,6 +162,17 @@ function inner(r, q) {
     return [a, Math.min(1, a * q)];
 }
 
+// the biggest centred circle inside the shape, in pixels (for round content, like an analog clock's face):
+// the shortest ray, measured in a w × h box
+function reach(r, w, h) {
+    var m = 1e9;
+    for (var i = 0; i < N; i++) {
+        var t = angle(i);
+        m = Math.min(m, r[i] * Math.sqrt(Math.pow(Math.cos(t) * w / 2, 2) + Math.pow(Math.sin(t) * h / 2, 2)));
+    }
+    return m;
+}
+
 // the outline as points: rays `r` (turned by `turn`, 0–1 of a full turn) in a w × h box, shrunk by `inset` px
 function points(r, w, h, turn, inset) {
     var pts = [], cx = w / 2, cy = h / 2, sh = Math.round((turn || 0) * N);

@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Each wallpaper remembers its own look: the shape (square / round / squiggle), liquid glass, and its own set
+// Each wallpaper remembers its own look: the shape (square / round / squiggle), liquid glass (on, and its style), and its own set
 // of desktop widgets (which ones, where, how big, their shapes and settings). Switching wallpapers keeps the
 // one you're leaving and brings back the one you're going to (widgets glide there, or come and go); a
 // wallpaper you've never used starts from what's on screen. The lock screen's widgets stay shared.
@@ -30,7 +30,7 @@ Singleton {
     }
 
     function snapshot() {
-        return { look: Look.shape, glass: Look.glass, desktop: Widgets.desktop() };
+        return { look: Look.shape, glass: Look.glass, glassLook: Look.glassLook(), desktop: Widgets.desktop() };
     }
 
     function follow() {
@@ -50,6 +50,8 @@ Singleton {
         Look.set(p.look);
         if (typeof p.glass === "boolean")
             Look.setGlass(p.glass);
+        if (p.glassLook)
+            Look.setGlassLook(p.glassLook);
         if (Array.isArray(p.desktop)) {
             Widgets.setDesktop(p.desktop);
         } else if (p.widgets) {                  // saved before the sets: just the spots, sizes and shapes

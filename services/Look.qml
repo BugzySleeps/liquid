@@ -13,6 +13,7 @@ import qs.config
 //   qs -c ekitai ipc call look set round      square | round | squiggle
 //   qs -c ekitai ipc call look next
 //   qs -c ekitai ipc call look glass on       on | off | toggle
+//   qs -c ekitai ipc call look glassStyle clear   clear | tinted | liquid (the glass's tune, see `styles`)
 Singleton {
     id: root
 
@@ -24,6 +25,61 @@ Singleton {
         target: Colors
         property: "glassy"
         value: root.glass
+    }
+
+    // how the glass looks: a style (clear and tinted like macOS's, liquid the shell's own deep-tinted one), or
+    // your own tune of it. frost: how blurred what's behind is · tint: how much colour covers it · bend: how
+    // strongly the rim refracts like a lens · shine: light on the rim · hue: the tint from the theme or neutral
+    readonly property var styles: ({
+            clear: { frost: 0.12, tint: 0.28, bend: 0.85, shine: 0.85, hue: "neutral" },
+            tinted: { frost: 0.4, tint: 0.6, bend: 0.7, shine: 0.7, hue: "theme" },
+            liquid: { frost: 0.63, tint: 0.54, bend: 0.45, shine: 0.55, hue: "theme" }
+        })
+    property string glassStyle: "clear"
+    property var tune: styles.clear
+    readonly property var glassKeys: ["frost", "tint", "bend", "shine"]
+
+    function setGlassStyle(name) {
+        if (!styles[name])
+            return;
+        glassStyle = name;
+        tune = Object.assign({}, styles[name]);
+        save();
+    }
+    // one knob moved: it's your own tune now
+    function setTune(key, v) {
+        const t = Object.assign({}, tune);
+        t[key] = key === "hue" ? v : Math.max(0, Math.min(1, v));
+        tune = t;
+        glassStyle = "custom";
+        saveSoon.restart();
+    }
+    // all of it at once (a wallpaper's theme)
+    function setGlassLook(g) {
+        if (!g)
+            return;
+        glassStyle = g.style ?? "custom";
+        tune = fixTune(g.tune) ?? (styles[glassStyle] ? Object.assign({}, styles[glassStyle]) : tune);
+        save();
+    }
+    function glassLook() {
+        return { style: glassStyle, tune: Object.assign({}, tune) };
+    }
+    function fixTune(t) {
+        if (!t || typeof t !== "object")
+            return null;
+        const o = Object.assign({}, styles.clear);
+        for (const k of glassKeys)
+            if (typeof t[k] === "number")
+                o[k] = Math.max(0, Math.min(1, t[k]));
+        if (t.hue === "theme" || t.hue === "neutral")
+            o.hue = t.hue;
+        return o;
+    }
+    Timer {
+        id: saveSoon
+        interval: 400
+        onTriggered: root.save()
     }
 
     readonly property bool round: shape !== "square"
@@ -51,7 +107,7 @@ Singleton {
     }
 
     function save() {
-        file.setText(JSON.stringify({ shape, glass }) + "\n");
+        file.setText(JSON.stringify({ shape, glass, glassStyle, tune }) + "\n");
     }
 
     // Hyprland windows: rounded corners in round / squiggle. Reapplied after a config reload
@@ -86,6 +142,9 @@ Singleton {
                     root.shape = d.shape;
                 if (typeof d.glass === "boolean")
                     root.glass = d.glass;
+                if (typeof d.glassStyle === "string")
+                    root.glassStyle = d.glassStyle;
+                root.tune = root.fixTune(d.tune) ?? Object.assign({}, root.styles[root.glassStyle] ?? root.styles.clear);
             } catch (e) {}
             root.loaded = true;
             root.applyWindows();
@@ -109,6 +168,9 @@ Singleton {
         }
         function glass(on: string): void {
             root.setGlass(on === "toggle" ? !root.glass : on === "on");
+        }
+        function glassStyle(name: string): void {
+            root.setGlassStyle(name);
         }
     }
 }

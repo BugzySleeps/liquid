@@ -21,19 +21,27 @@ Item {
     property int lobes: Math.max(6, Math.min(12, Math.round(Math.min(width, height) / 5)))
     property real spin: 0                        // turns a cookie (degrees)
     // glass: light catching the top of see-through surfaces (not solid ones, not empty outlines)
-    readonly property bool sheen: Look.glass && color.a > 0.05 && color.a < 0.99 && !glassy
+    readonly property bool sheen: Look.glass && color.a > 0.05 && color.a < 0.99 && !glassy && !bubble
     // the glass surfaces themselves (filled with Colors.glass): the shell's own liquid glass (GlassFill)
     readonly property bool glassy: Look.glass && Qt.colorEqual(color, Colors.glass)
-    readonly property color fill: glassy ? "transparent" : color
+    // the dark boxes on glass (tiles, wells, buttons) turn to little bubbles of it, like macOS's: see-through,
+    // a touch lighter, a hairline of light round them
+    readonly property bool bubble: Look.glass && !glassy && (Qt.colorEqual(color, Colors.bg1) || Qt.colorEqual(color, Colors.bg2) || Qt.colorEqual(color, Colors.bg3))
+    readonly property color fill: glassy ? "transparent" : bubble ? Qt.tint(Qt.alpha(color, 0.3 + 0.55 * Look.tune.tint), Qt.rgba(1, 1, 1, Qt.colorEqual(color, Colors.bg3) ? 0.1 : 0.05)) : color
+    readonly property real edgeWidth: glassy && Look.tune.shine > 0.05 ? 0 : bubble && frame.border.width === 0 ? 1 : frame.border.width
+    readonly property color edgeColor: bubble && frame.border.width === 0 ? Qt.rgba(1, 1, 1, 0.05 + 0.13 * Look.tune.shine) : frame.border.color
     property bool curve: true                    // false for masks: the curve renderer doesn't draw into a hidden layer
 
     Loader {
         anchors.fill: parent
         active: frame.glassy
+        // in squiggle the glass takes the wavy outline itself, so its rim of light follows the waves
         sourceComponent: GlassFill {
-            radius: Look.round ? frame.radius : 0
-            inset: frame.wavy && !frame.blob ? frame.amplitude + frame.border.width / 2 : 0
-            circle: frame.blob && Look.round
+            readonly property real waveInset: frame.amplitude + frame.border.width / 2
+            radius: !Look.round ? 0 : frame.wavy && !frame.blob ? Math.max(0, Math.min(frame.radius - waveInset, frame.width / 2 - waveInset, frame.height / 2 - waveInset)) : frame.radius
+            inset: frame.wavy ? (frame.blob ? frame.border.width / 2 : waveInset) : 0
+            circle: frame.blob && Look.round && !frame.wavy
+            wave: !frame.wavy ? Qt.vector4d(0, 0, 0, 0) : frame.blob ? Qt.vector4d(frame.amplitude, 0, frame.lobes, frame.spin * Math.PI / 180) : Qt.vector4d(frame.amplitude, frame.waves(), 0, 0)
         }
     }
 
@@ -42,8 +50,9 @@ Item {
         visible: !frame.wavy
         radius: Look.round ? frame.radius : 0
         color: frame.fill
-        border.width: frame.border.width
-        border.color: frame.border.color
+        // glass draws its own rim of light instead
+        border.width: frame.edgeWidth
+        border.color: frame.edgeColor
         antialiasing: true
 
         Rectangle {
@@ -71,8 +80,8 @@ Item {
 
         ShapePath {
             fillColor: frame.fill
-            strokeColor: frame.border.width > 0 ? frame.border.color : "transparent"
-            strokeWidth: frame.border.width
+            strokeColor: frame.edgeWidth > 0 ? frame.edgeColor : "transparent"
+            strokeWidth: frame.edgeWidth
             joinStyle: ShapePath.RoundJoin
             PathPolyline {
                 id: outline
@@ -114,6 +123,14 @@ Item {
         return pts;
     }
 
+    // how many waves fit round a wavy box (wave() and the glass share it)
+    function waves() {
+        const inset = amplitude + frame.border.width / 2;
+        const w = width - 2 * inset, h = height - 2 * inset;
+        const r = Math.max(0, Math.min(radius - inset, w / 2, h / 2));
+        return Math.max(4, Math.round((2 * (w - 2 * r) + 2 * (h - 2 * r) + 2 * Math.PI * r) / wavelength));
+    }
+
     // a rounded rectangle whose edge ripples: a whole number of waves fits the perimeter, so it closes cleanly
     function wave() {
         const a = amplitude, inset = a + frame.border.width / 2;
@@ -121,7 +138,7 @@ Item {
         const r = Math.max(0, Math.min(radius - inset, w / 2, h / 2));
         const sx = w - 2 * r, sy = h - 2 * r, arc = Math.PI * r / 2;
         const P = 2 * sx + 2 * sy + 4 * arc;
-        const k = Math.max(4, Math.round(P / wavelength));
+        const k = waves();
         // edges and corners in order, clockwise from the top-left corner's end
         const parts = [
             { len: sx, at: d => [r + d, 0, 0, -1] },

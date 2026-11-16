@@ -15,35 +15,45 @@ Singleton {
     readonly property var screen: Quickshell.screens[0]
     readonly property string dir: Quickshell.env("HOME") + "/.cache/ekitai/glass"
     property string backdrop: ""                 // file:// path of the blurred wallpaper, "" until it's made
-    readonly property string wanted: Colors.wallpaper && screen ? Colors.wallpaper + "|" + screen.width + "x" + screen.height : ""
+    // how blurred, in screen pixels (Look.tune.frost); light frosts keep more detail (a half-size picture)
+    readonly property int blur: Math.round(4 + 36 * Look.tune.frost)
+    readonly property string wanted: Colors.wallpaper && screen ? Colors.wallpaper + "|" + screen.width + "x" + screen.height + "|" + blur : ""
 
-    onWantedChanged: make()
+    // a frost slider dragging shouldn't make a picture per step
+    onWantedChanged: soon.restart()
+    Timer {
+        id: soon
+        interval: 250
+        onTriggered: root.make()
+    }
     Component.onCompleted: make()
     function make() {
         if (!wanted || maker.running)
             return;
         maker.made = wanted;
-        maker.command = ["python3", "-c", maker.script, Colors.wallpaper, String(screen.width), String(screen.height), dir];
+        maker.command = ["python3", "-c", maker.script, Colors.wallpaper, String(screen.width), String(screen.height), dir, String(blur)];
         maker.running = true;
     }
     Process {
         id: maker
         property string made
-        // crop like the wallpaper (it fills the screen), shrink to a quarter, blur; kept, keyed by file and size
+        // crop like the wallpaper (it fills the screen), shrink (a quarter, half for a light frost), blur; kept,
+        // keyed by file, size and blur
         readonly property string script: "
 import sys, os, hashlib
 from PIL import Image, ImageFilter
-src, W, H, out = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
+src, W, H, out, B = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4], int(sys.argv[5])
 os.makedirs(out, exist_ok=True)
-key = hashlib.sha1(f'{src}|{os.path.getmtime(src)}|{W}x{H}'.encode()).hexdigest()[:16]
+key = hashlib.sha1(f'{src}|{os.path.getmtime(src)}|{W}x{H}|{B}'.encode()).hexdigest()[:16]
+f = 2 if B < 16 else 4
 path = os.path.join(out, key + '.png')
 if not os.path.exists(path):
     im = Image.open(src).convert('RGB')
     k = max(W / im.width, H / im.height)
     im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.BILINEAR)
     l, t = (im.width - W) // 2, (im.height - H) // 2
-    im = im.crop((l, t, l + W, t + H)).resize((W // 4, H // 4), Image.LANCZOS)
-    im = im.filter(ImageFilter.GaussianBlur(7))
+    im = im.crop((l, t, l + W, t + H)).resize((W // f, H // f), Image.LANCZOS)
+    im = im.filter(ImageFilter.GaussianBlur(B / f))
     im.save(path + '.tmp.png')
     os.replace(path + '.tmp.png', path)
 print(path)

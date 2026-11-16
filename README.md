@@ -125,15 +125,19 @@ These are bound in Hyprland (`hyprland.lua` in the dotfiles), each one an IPC ca
 - **shape and glass:** `square`, `round` or `squiggle` (wavy edges, scalloped buttons) for everything at once, and
   liquid glass on top of any of them: the wallpaper frosted behind the bar, panels and widgets, bent at their rims
   like a lens, with light on the edges. The shell draws it itself (`shaders/glass.frag`) over a blurred copy of the
-  wallpaper made once, so there's no compositor blur and it's light on old GPUs.
+  wallpaper made once, so there's no compositor blur and it's light on old GPUs. Styles: `clear` and `tinted`
+  (like macOS's liquid glass) or `liquid` (deeper, in the theme's colour), or tune it yourself in settings:
+  frost, tint, refraction, rim light, and theme or neutral colour. The dark boxes inside turn to little glass bubbles.
 - **desktop widgets:** clock, calendar, weather (open-meteo; hidden while you share your screen), fetch, now
   playing, lyrics, visualizer, notes, images, and Claude Code's token usage. Drag, resize, and pick the workspaces
   each one shows on. In round and squiggle each widget can take a **shape** of its own (19: pill, circle,
   squircle, arch, gem, diamond, triangle, pentagon, 4 / 6 / 9 / 12-sided cookies, 4 / 8-leaf clovers, flower,
   puffy, sunny, burst), picked in its settings in edit mode: it morphs into it with a little bounce, its content
   fits inside (an analog clock gets a round face), a picture fills it, and it can spin slowly. The shapes are drawn
-  by `components/Shapes.js`.
-- **per wallpaper:** each wallpaper keeps its own shape, liquid glass and desktop widgets (which ones, where, how
+  by `components/Shapes.js`. As the scrolling layout's row of windows slides by, the widgets move with it
+  (settings → widgets): drifting behind it like a far-off layer (parallax), scrolling away on the row itself
+  (canvas), or staying put (pinned).
+- **per wallpaper:** each wallpaper keeps its own shape, liquid glass (and its style) and desktop widgets (which ones, where, how
   big, their shapes and settings), like a theme of its own: switch wallpapers and the look comes back with it, the
   widgets gliding into place. The lock screen's widgets stay shared. One switch
   turns it off (settings → look).

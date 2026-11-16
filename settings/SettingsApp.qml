@@ -216,7 +216,7 @@ PanelWindow {
                         }
                         Option {
                             title: "per wallpaper"
-                            hint: "each wallpaper keeps its own shape, liquid glass and desktop widgets (which ones, where, how big, their shapes), like its own theme. switch wallpapers and they come back."
+                            hint: "each wallpaper keeps its own shape, liquid glass (and its style) and desktop widgets (which ones, where, how big, their shapes), like its own theme. switch wallpapers and they come back."
                             Chip {
                                 text: "off"
                                 on: !Settings.perWall
@@ -262,6 +262,55 @@ PanelWindow {
                                 text: "󰂵 on"
                                 on: Look.glass
                                 onClicked: Look.setGlass(true)
+                            }
+                        }
+                        Option {
+                            visible: Look.glass
+                            title: "glass style"
+                            hint: ({ clear: "like macOS's clear glass: barely tinted, lightly frosted, a thick bent rim catching the light.", tinted: "like macOS's tinted glass: more frosted, the theme's colour over it so text stands out more.", liquid: "the shell's own: deep frost, the theme's colour, a softer rim.", custom: "your own tune, from the knobs below." })[Look.glassStyle] ?? ""
+                            Repeater {
+                                model: ["clear", "tinted", "liquid"]
+                                Chip {
+                                    required property string modelData
+                                    text: modelData
+                                    on: Look.glassStyle === modelData
+                                    onClicked: Look.setGlassStyle(modelData)
+                                }
+                            }
+                            Chip {
+                                visible: Look.glassStyle === "custom"
+                                text: "custom"
+                                on: true
+                            }
+                        }
+                        Repeater {
+                            model: [["frost", "frost", "how blurred the wallpaper behind is"], ["tint", "tint", "how much colour covers it: less is clearer, more is easier to read on"], ["bend", "refraction", "how strongly the rim bends what's behind it, like a lens"], ["shine", "rim light", "the light catching the edge"]]
+                            Option {
+                                required property var modelData
+                                visible: Look.glass
+                                title: modelData[1]
+                                hint: modelData[2] + " · " + Math.round(Look.tune[modelData[0]] * 100) + "%"
+                                SegSlider {
+                                    width: 200
+                                    segments: 20
+                                    value: Look.tune[modelData[0]]
+                                    onMoved: v => Look.setTune(modelData[0], v)
+                                }
+                            }
+                        }
+                        Option {
+                            visible: Look.glass
+                            title: "glass colour"
+                            hint: "tinted with the theme's colours, or a neutral smoke like macOS"
+                            Chip {
+                                text: "theme"
+                                on: Look.tune.hue === "theme"
+                                onClicked: Look.setTune("hue", "theme")
+                            }
+                            Chip {
+                                text: "neutral"
+                                on: Look.tune.hue === "neutral"
+                                onClicked: Look.setTune("hue", "neutral")
                             }
                         }
                     }
@@ -437,6 +486,19 @@ PanelWindow {
                                 onClicked: {
                                     Settings.open = false;
                                     Widgets.edit("desktop");
+                                }
+                            }
+                        }
+                        Option {
+                            title: "as the windows scroll"
+                            hint: ({ parallax: "the widgets drift behind the row of windows, slower, like a far-off layer", canvas: "the widgets sit on the row itself and scroll away with the windows", pinned: "the widgets stay put on the screen" })[Settings.canvasWidgets] ?? ""
+                            Repeater {
+                                model: ["parallax", "canvas", "pinned"]
+                                Chip {
+                                    required property string modelData
+                                    text: modelData
+                                    on: Settings.canvasWidgets === modelData
+                                    onClicked: Settings.set("canvasWidgets", modelData)
                                 }
                             }
                         }

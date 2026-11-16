@@ -27,6 +27,10 @@ Singleton {
     // each wallpaper keeps its own shape and widget layout (Themes)
     property bool perWall: true
 
+    // the desktop widgets as the row of windows scrolls (Drift): "parallax" (drift behind, slower), "canvas"
+    // (scroll with the windows) or "pinned" (stay put)
+    property string canvasWidgets: "parallax"
+
     // music, lyrics and visualizer widgets hide while nothing's playing (off: they always show)
     property bool hideIdleMusic: false
 
@@ -91,6 +95,8 @@ Singleton {
                 for (const k of ["islandTracks", "islandNotifs", "lockMuffle"])
                     if (typeof d[k] === "boolean")
                         root[k] = d[k];
+                if (["parallax", "canvas", "pinned"].includes(d.canvasWidgets))
+                    root.canvasWidgets = d.canvasWidgets;
                 if (["strip", "islands"].includes(d.barStyle))
                     root.barStyle = d.barStyle;
                 if (["auto", "always", "never"].includes(d.perf))
@@ -128,7 +134,7 @@ Singleton {
     Timer {
         id: saveLater
         interval: 300
-        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, artAccent: root.artAccent, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
+        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, canvasWidgets: root.canvasWidgets, artAccent: root.artAccent, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
     }
 
     IpcHandler {
