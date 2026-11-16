@@ -405,7 +405,7 @@ Column {
 
         Frame {
             id: box
-            x: drag.x
+            x: slide.x
             width: parent.width
             height: content.implicitHeight + 16
             color: area.containsMouse && !drip.running ? Colors.bg3 : Colors.bg2
@@ -418,7 +418,7 @@ Column {
                 origin.y: box.height / 2
             }
             // a swipe fades it as it goes
-            opacity: 1 - Math.max(0, drag.x) / (card.width * 1.2)
+            opacity: 1 - Math.max(0, slide.x) / (card.width * 1.2)
 
             RowLayout {
                 id: content
@@ -511,12 +511,12 @@ Column {
 
         // the swipe: drag right past a third and let go to dismiss; less springs it back
         Item {
-            id: drag
+            id: slide
             x: 0
         }
         NumberAnimation {
             id: springBack
-            target: drag
+            target: slide
             property: "x"
             to: 0
             duration: 380
@@ -530,7 +530,7 @@ Column {
             hoverEnabled: true
             enabled: !drip.running
             cursorShape: Qt.PointingHandCursor
-            drag.target: drag
+            drag.target: slide
             drag.axis: Drag.XAxis
             drag.minimumX: 0
             drag.maximumX: card.width
@@ -543,14 +543,16 @@ Column {
             }
             onPositionChanged: if (drag.active)
                 swiped = true
-            onReleased: {
+            function letGo() {
                 if (!swiped)
                     return;
-                if (drag.x > card.width / 3)
+                if (slide.x > card.width / 3)
                     card.go(0, true);
                 else
                     springBack.start();
             }
+            onReleased: letGo()
+            onCanceled: letGo()                  // (let go outside the panel)
             onClicked: {
                 if (swiped)
                     return;
