@@ -8,7 +8,7 @@ import qs.components
 
 // Claude Code's token usage (~/.config/rice/claude-usage reads its session logs, once a minute):
 // the current 5-hour window and how long until it resets, today's total and what it's made of,
-// and the last 12 hours as bars.
+// and the last 12 hours as bars. Small, just the window: tokens, when it resets, how far through.
 Item {
     id: root
     property var wd
@@ -49,10 +49,51 @@ Item {
     }
 
     readonly property var win: u?.window ?? null
+    readonly property bool compact: width < Widgets.need("claude")[0] || height < Widgets.need("claude")[1]
     readonly property real progress: win?.active ? Math.max(0, Math.min(1, (now - win.start) / (win.end - win.start))) : 0
+
+    // small
+    Column {
+        anchors.centerIn: parent
+        width: parent.width
+        visible: root.compact
+        spacing: 4
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: 8
+            Txt {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "✻"
+                font.pixelSize: Style.px(22)
+                color: Colors.accent
+            }
+            Txt {
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.win?.active ? root.fmt(root.win.tokens) : "idle"
+                font.pixelSize: Style.px(Math.min(33, root.height * 0.36))
+                color: Colors.bright
+            }
+        }
+        Txt {
+            width: parent.width
+            horizontalAlignment: Text.AlignHCenter
+            text: root.win?.active ? "resets in " + root.untilReset(root.win.end - root.now) : "no window open"
+            font.pixelSize: Style.small
+            color: root.win?.active ? Colors.accent : Colors.mid
+        }
+        Meter {
+            width: parent.width
+            visible: !!root.win?.active
+            segments: 16
+            segWidth: Math.max(2, Math.floor((width - 15 * 2) / 16))
+            segHeight: 5
+            value: root.progress
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
+        visible: !root.compact
         spacing: 6
 
         // ✻ claude                         opus 5.5

@@ -133,13 +133,18 @@ These are bound in Hyprland (`hyprland.lua` in the dotfiles), each one an IPC ca
   frost, tint, refraction, rim light, and theme or neutral colour. The dark boxes inside turn to little glass bubbles.
 - **desktop widgets:** clock, calendar, weather (open-meteo; hidden while you share your screen), fetch, now
   playing, lyrics, visualizer, notes, images, and Claude Code's token usage. Drag, resize, and pick the workspaces
-  each one shows on. In round and squiggle each widget can take a **shape** of its own (19: pill, circle,
+  each one shows on. Each one's background can be faded (0–100%) while its content stays as it is. In round and squiggle each widget can take a **shape** of its own (19: pill, circle,
   squircle, arch, gem, diamond, triangle, pentagon, 4 / 6 / 9 / 12-sided cookies, 4 / 8-leaf clovers, flower,
   puffy, sunny, burst), picked in its settings in edit mode: it morphs into it with a little bounce, its content
   fits inside (an analog clock gets a round face), a picture fills it, and it can spin slowly. The shapes are drawn
   by `components/Shapes.js`. As the scrolling layout's row of windows slides by, the widgets move with it
   (settings → widgets): drifting behind it like a far-off layer (parallax), scrolling away on the row itself
   (canvas), or staying put (pinned).
+- **animated wallpapers:** a still wallpaper with something floating on water can come alive: the sea rolls and
+  glitters, the floater bobs and rocks on the swell, dipping into the water, a sun in the sky can sway and
+  glow, and with music on it all moves to it: bigger, quicker swell, more glitter, the sun pulsing on the bass (`shaders/livewall.frag`; `--sun x,y,disc,rays` cuts it out too). Make one
+  with `~/.config/rice/livewall <image> <horizon-y> "<loose outline x,y ...>"`, which cuts the floater into its own
+  layer next to the image (`.live/<name>/`). Settings → look → animated wallpaper; still in performance mode.
 - **per wallpaper:** each wallpaper keeps its own shape, liquid glass (and its style) and desktop widgets (which ones, where, how
   big, their shapes and settings), like a theme of its own: switch wallpapers and the look comes back with it, the
   widgets gliding into place. The lock screen's widgets stay shared. One switch
@@ -183,7 +188,7 @@ welcome/         the first-run welcome
 components/      shared pieces (Frame, Pool, Logo, ...)
 services/        state singletons (audio, media, notifications, lock, settings, ...)
 config/          colours, sizes and fonts, the keybind list
-shaders/         liquid.frag, glass.frag, artwall.frag (+ the compiled .qsb)
+shaders/         liquid.frag, glass.frag, artwall.frag, livewall.frag (+ the compiled .qsb)
 sounds/          the sounds and make.py
 assets/logo/     the logo
 ```

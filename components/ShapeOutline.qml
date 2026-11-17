@@ -5,8 +5,9 @@ import qs.services
 import "Shapes.js" as Shapes
 
 // A widget's shape (components/Shapes.js), filled and outlined, morphing into a new one when `shape` changes
-// (a little springy). `turn` spins it (0–1 of a turn). `inner` is the box its content gets ([width, height], 0–1
-// of its own), shaped like `aspect` (height / width).
+// (a little springy). `angle` sets it at a tilt and `turn` spins it on top of that (both 0–1 of a turn). `inner` is the box its content gets ([width, height], 0–1
+// of its own): the biggest that fits with room for `need` ([w, h] px inside `pad`), or else for `least`
+// (Shapes.place).
 Item {
     id: root
 
@@ -15,7 +16,11 @@ Item {
     property color borderColor: "transparent"
     property real borderWidth: 0
     property real turn: 0
-    property real aspect: 1
+    property real angle: 0                       // a tilt the content keeps clear of (the spin isn't)
+    property real angleShown: angle              // where the outline's drawn (can lag behind, easing to `angle`)
+    property var need: [0, 0]
+    property var least: need
+    property real pad: 0
     property Item fillItem: null                 // fill it with this (a picture) instead of `color`
     property bool curve: true                    // false for masks: the curve renderer doesn't draw into a hidden layer
     readonly property bool sheen: Look.glass && color.a > 0.05 && color.a < 0.99
@@ -28,9 +33,10 @@ Item {
     property var to: []
     property real t: 1
     readonly property var now: from.length && t < 1 ? Shapes.mix(from, to, t) : to
-    readonly property var inner: to.length ? Shapes.inner(to, aspect) : [1, 1]
+    readonly property var tilted: Shapes.turned(to, angle)
+    readonly property var inner: to.length ? Shapes.place(tilted, width, height, need, least, pad) : [1, 1, true]
     // the radius of the biggest circle that fits (round content fills that instead of `inner`'s box)
-    readonly property real reach: to.length ? Shapes.reach(to, width, height) : Math.min(width, height) / 2
+    readonly property real reach: to.length ? Shapes.reach(tilted, width, height) : Math.min(width, height) / 2
 
     function target() {
         return Shapes.rays(shape, width, height, Look.r(width, height));
@@ -102,7 +108,7 @@ Item {
             joinStyle: ShapePath.RoundJoin
             PathPolyline {
                 id: outline
-                path: root.now.length ? Shapes.points(root.now, root.width, root.height, root.turn, root.borderWidth / 2) : []
+                path: root.now.length ? Shapes.points(root.now, root.width, root.height, root.turn + root.angleShown, root.borderWidth / 2) : []
             }
         }
         ShapePath {                              // liquid glass: light on the rim
@@ -110,7 +116,7 @@ Item {
             strokeColor: Qt.rgba(1, 1, 1, 0.45 * Look.tune.shine)
             strokeWidth: 1.2
             PathPolyline {
-                path: root.glassy ? Shapes.points(root.now, root.width, root.height, root.turn, root.borderWidth + 1) : []
+                path: root.glassy ? Shapes.points(root.now, root.width, root.height, root.turn + root.angleShown, root.borderWidth + 1) : []
             }
         }
         ShapePath {                              // the glass sheen

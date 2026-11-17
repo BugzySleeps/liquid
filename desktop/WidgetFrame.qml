@@ -10,7 +10,8 @@ import "../components/Shapes.js" as Shapes
 // still move them). Lock screen widgets set to float ride the liquid: their height comes from the
 // surface under their middle, and they tilt with it; you only drag them sideways.
 // In round and squiggle a widget can take a shape (props.shape: a cookie, a clover, an arch…, see
-// components/Shapes.js), morphing into it, with its content inside; an image fills the shape. props.spin turns it.
+// components/Shapes.js), morphing into it, with its content inside; an image fills the shape. props.angle tilts it
+// (degrees; not box or pill) and props.spin turns it; either way the content inside stays upright.
 Item {
     id: frame
 
@@ -27,6 +28,10 @@ Item {
     readonly property string shape: Look.round ? (w.props.shape ?? "box") : "box"
     readonly property bool shaped: shape !== "box" || outline.t < 1    // (still morphing back to the box)
     readonly property bool fills: shaped && w.type === "image"
+    // how much of the box (or glass) behind the content shows, 0..1 (props.bg). While editing, the others
+    // keep a faint outline so you can still find them; the one you're tuning shows as it is.
+    readonly property real bg: w.props.bg ?? 1
+    readonly property real bgShown: editing && !selected ? Math.max(bg, 0.3) : bg
     // an analog clock's round face fills the biggest circle in the shape, not its biggest box
     readonly property bool roundFace: shaped && w.type === "clock" && w.props.style === "analog"
 
@@ -76,6 +81,7 @@ Item {
     Frame {
         anchors.fill: parent
         visible: !frame.shaped
+        opacity: frame.bgShown
         color: frame.w.frame ? Colors.glass : "transparent"
         border.width: frame.w.frame || frame.editing ? Style.line : 0
         border.color: frame.selected ? Colors.accent : Colors.faint
@@ -84,10 +90,15 @@ Item {
         id: outline
         anchors.fill: parent
         visible: frame.shaped
+        opacity: frame.fills ? 1 : frame.bgShown  // a picture filling the shape is content, not background
         shape: frame.shape
         turn: frame.turn
-        // the content's own proportions (in a square shape): an analog clock's round, the rest as they come
-        aspect: frame.roundFace ? 1 : Math.min(1, frame.t.h / frame.t.w)
+        angle: frame.tilt
+        angleShown: frame.tiltShown
+        // the box inside for the content: the biggest that fits, with room for all of it or its compact layout
+        need: Widgets.need(frame.w.type)
+        least: Widgets.least(frame.w.type)
+        pad: 6
         color: frame.w.frame && !frame.fills ? Colors.glass : "transparent"
         borderWidth: frame.w.frame || frame.editing ? Style.line : 0
         borderColor: frame.selected ? Colors.accent : Colors.faint
@@ -104,6 +115,15 @@ Item {
     }
 
     property real turn: 0
+    // the tilt, 0–1 of a turn (box and pill are worked out for their own size, so they stay straight)
+    readonly property real tilt: Shapes.free(shape) ? 0 : (w.props.angle ?? 0) / 360
+    property real tiltShown: tilt
+    Behavior on tiltShown {
+        NumberAnimation {
+            duration: Style.med
+            easing.type: Easing.OutCubic
+        }
+    }
     NumberAnimation on turn {
         running: !!frame.w.props.spin && frame.shaped && frame.here && !Perf.low
         from: 0
@@ -301,14 +321,10 @@ Item {
                 if (!pressed)
                     return;
                 const p = mapToItem(frame, e.x, e.y);
-                if (!Shapes.free(frame.shape)) {     // a shape stays square
-                    const side = Math.max(Widgets.shapeMin(frame.w.type, frame.shape), Math.min(frame.parent.width - frame.w.x, frame.parent.height - frame.w.y, Widgets.snapped(Math.max(p.x, p.y))));
-                    frame.w.w = side;
-                    frame.w.h = side;
-                    return;
-                }
-                frame.w.w = Math.max(frame.t.minW, Math.min(frame.parent.width - frame.w.x, Widgets.snapped(p.x)));
-                frame.w.h = Math.max(frame.t.minH, Math.min(frame.parent.height - frame.w.y, Widgets.snapped(p.y)));
+                // (in a shape it grows till the content fits inside)
+                const size = Widgets.shapeSize(frame.w.type, frame.shape, Widgets.snapped(p.x), Widgets.snapped(p.y), frame.w.props.angle);
+                frame.w.w = Math.min(frame.parent.width - frame.w.x, size[0]);
+                frame.w.h = Math.min(frame.parent.height - frame.w.y, size[1]);
             }
             onReleased: Widgets.save()
         }

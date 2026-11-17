@@ -146,6 +146,28 @@ Frame {
                     }
                 }
             }
+            // how see-through the box is: the content stays as it is
+            Row {
+                visible: box.w?.frame ?? false
+                spacing: 8
+                Txt {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "background"
+                    color: Colors.mid
+                }
+                SegSlider {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 120
+                    segments: 10
+                    value: box.w?.props.bg ?? 1
+                    onMoved: v => Widgets.setProp(box.w, "bg", Math.round(v * 20) / 20)
+                }
+                Txt {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Math.round((box.w?.props.bg ?? 1) * 100) + "%"
+                    color: Colors.mid
+                }
+            }
         }
 
         // ── shape (round and squiggle) ───────────
@@ -201,6 +223,28 @@ Frame {
                     text: "󰑓 spin slowly"
                     on: box.w?.props.spin ?? false
                     onClicked: Widgets.setProp(box.w, "spin", !box.w.props.spin)
+                }
+            }
+            // tilt the shape (in 15° steps): the content inside stays upright
+            Row {
+                visible: Look.round && !Shapes.free(box.w?.props.shape ?? "box")
+                spacing: 8
+                Txt {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "rotate"
+                    color: Colors.mid
+                }
+                SegSlider {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 120
+                    segments: 12
+                    value: (box.w?.props.angle ?? 0) / 360
+                    onMoved: v => Widgets.setAngle(box.w, Math.round(v * 24) * 15)
+                }
+                Txt {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: (box.w?.props.angle ?? 0) + "°"
+                    color: Colors.mid
                 }
             }
         }

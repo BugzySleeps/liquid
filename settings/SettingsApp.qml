@@ -251,6 +251,15 @@ PanelWindow {
                             }
                         }
                         Option {
+                            title: "animated wallpaper"
+                            hint: "wallpapers brought to life with ~/.config/rice/livewall move: the sea rolls and glitters, and what floats on it bobs. still in performance mode."
+                            Chip {
+                                text: Settings.liveWall ? "󰔉 on" : "off"
+                                on: Settings.liveWall
+                                onClicked: Settings.set("liveWall", !Settings.liveWall)
+                            }
+                        }
+                        Option {
                             title: "album wallpaper"
                             hint: "with colour from album art on, the wallpaper is made from the cover's colours too, with the cover and the song on it, and a design that moves with the music: waves, aurora, drips, a glass orb, or shuffle for one per album. still in performance mode."
                             enabled: Settings.artAccent

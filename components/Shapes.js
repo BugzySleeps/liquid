@@ -16,7 +16,7 @@ var list = [
     ["sunny", "sunny"], ["burst", "burst"]
 ];
 
-// the ones that keep any proportions; the others square their widget up
+// the ones worked out for the box's real size (the rest are drawn round a circle and stretched to the box)
 function free(name) {
     return name === "box" || name === "pill" || !name;
 }
@@ -162,6 +162,31 @@ function inner(r, q) {
     return [a, Math.min(1, a * q)];
 }
 
+// where the content goes in a W × H px widget whose content needs at least mw × mh px (plus `pad` px all
+// round): of the boxes that fit inside the shape, the biggest that's big enough, so a wide widget gets a wide
+// box and a tall one a tall box. Nothing big enough: the one that comes closest. [width, height, big enough]
+function fit(r, W, H, mw, mh, pad) {
+    var best = [1, 1, false], bs = -1, bok = false;
+    for (var j = 0; j <= 48; j++) {
+        var k = inner(r, Math.pow(10, -1 + j / 24));    // height/width 0.1 … 10, in the stretched space
+        var pw = k[0] * W - 2 * pad, ph = k[1] * H - 2 * pad;
+        var ok = pw >= mw && ph >= mh, sc = ok ? pw * ph : Math.min(pw / mw, ph / mh);
+        if ((ok && !bok) || (ok === bok && sc > bs)) {
+            best = [k[0], k[1], ok];
+            bs = sc;
+            bok = ok;
+        }
+    }
+    return best;
+}
+
+// the same, for content that has a compact layout: room for everything (`need`, [w, h]) if it can, or else
+// for the compact one (`least`)
+function place(r, W, H, need, least, pad) {
+    var f = fit(r, W, H, need[0], need[1], pad);
+    return f[2] ? f : fit(r, W, H, least[0], least[1], pad);
+}
+
 // the biggest centred circle inside the shape, in pixels (for round content, like an analog clock's face):
 // the shortest ray, measured in a w × h box
 function reach(r, w, h) {
@@ -182,6 +207,17 @@ function points(r, w, h, turn, inset) {
         pts.push(Qt.point(cx + Math.cos(t) * v * ax, cy + Math.sin(t) * v * ay));
     }
     return pts;
+}
+
+// rays `r` turned by `turn` (0–1 of a full turn, clockwise), as `points` draws them
+function turned(r, turn) {
+    var sh = Math.round((turn || 0) * N);
+    if (sh % N === 0)
+        return r;
+    var out = [];
+    for (var i = 0; i < N; i++)
+        out.push(r[((i - sh) % N + N) % N]);
+    return out;
 }
 
 function mix(a, b, f) {

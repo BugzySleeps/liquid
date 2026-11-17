@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 import Qt5Compat.GraphicalEffects
 import qs.config
 import qs.services
@@ -143,6 +144,118 @@ Scope {
                     sourceSize.height: win.height
                     asynchronous: true
                     onStatusChanged: win.topReady()
+                }
+            }
+
+            // a still wallpaper brought to life (Settings.liveWall): ~/.config/rice/livewall cuts what floats on its
+            // water into a layer of its own (<wallpaper's dir>/.live/<name>/), and shaders/livewall.frag rolls the
+            // sea and bobs it. Over the still picture once it's in; out while the wallpaper changes.
+            Item {
+                id: live
+                anchors.fill: parent
+                readonly property string dir: {
+                    const w = win.shown, i = w.lastIndexOf("/");
+                    return w && !win.album(w) ? w.slice(0, i) + "/.live/" + w.slice(i + 1).replace(/\.[^.]*$/, "") + "/" : "";
+                }
+                property var meta: null
+                readonly property bool ready: Settings.liveWall && !!meta && [plate, figure, front].every(i => i.status === Image.Ready) && (!meta.sun || sunImg.status === Image.Ready)
+                property real time: 0
+
+                opacity: ready && !win.stage ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Style.slow
+                    }
+                }
+
+                FileView {
+                    path: live.dir ? live.dir + "live.json" : ""
+                    printErrors: false
+                    watchChanges: true                   // livewall run again: the new layers come in
+                    onFileChanged: reload()
+                    onLoaded: {
+                        try {
+                            live.meta = JSON.parse(text());
+                        } catch (e) {
+                            live.meta = null;
+                        }
+                    }
+                    onLoadFailed: live.meta = null
+                    onPathChanged: if (!path)
+                        live.meta = null
+                }
+                Image {
+                    id: plate
+                    visible: false
+                    source: live.meta ? "file://" + live.dir + "plate.png?" + live.meta.made : ""
+                    asynchronous: true
+                    cache: false                 // remade by livewall: always the file as it is now
+                }
+                Image {
+                    id: figure
+                    visible: false
+                    source: live.meta ? "file://" + live.dir + "figure.png?" + live.meta.made : ""
+                    asynchronous: true
+                    cache: false                 // remade by livewall: always the file as it is now
+                }
+                Image {
+                    id: sunImg
+                    visible: false
+                    source: live.meta?.sun ? "file://" + live.dir + "sun.png?" + live.meta.made : ""
+                    asynchronous: true
+                    cache: false
+                }
+                Image {
+                    id: front
+                    visible: false
+                    source: live.meta ? "file://" + live.dir + "front.png?" + live.meta.made : ""
+                    asynchronous: true
+                    cache: false                 // remade by livewall: always the file as it is now
+                }
+
+                // with music on, it moves to it: how loud (cava's lower bars) and the bass (its lowest few)
+                property real flow: 0
+                property real energy: 0
+                property real beat: 0
+                Timer {                              // ~30 frames a second, and none in performance mode
+                    running: live.visible && !Perf.low
+                    interval: 33
+                    repeat: true
+                    onTriggered: {
+                        const v = Cava.values, n = Math.min(10, v.length);
+                        let e = 0, b = 0;
+                        for (let i = 0; i < n; i++)
+                            e += v[i];
+                        for (let i = 0; i < Math.min(4, n); i++)
+                            b += v[i];
+                        e = n ? Math.min(1, e / n * 1.4) : 0;
+                        b = n ? Math.min(1, b / Math.min(4, n) * 1.3) : 0;
+                        live.energy += (e - live.energy) * (e > live.energy ? 0.2 : 0.04);
+                        live.beat += (b - live.beat) * (b > live.beat ? 0.6 : 0.15);
+                        live.time += 0.033;
+                        live.flow += 0.033 * (1 + 1.5 * live.energy);
+                    }
+                }
+
+                ShaderEffect {
+                    anchors.fill: parent
+                    visible: live.ready
+                    property size size: Qt.size(width, height)
+                    property size img: Qt.size(live.meta?.size[0] ?? 1, live.meta?.size[1] ?? 1)
+                    property real time: live.time
+                    property real flow: live.flow
+                    property real energy: live.energy
+                    property real beat: live.beat
+                    property real horizon: live.meta?.horizon ?? 0
+                    property point pivot: Qt.point(live.meta?.pivot[0] ?? 0, live.meta?.pivot[1] ?? 0)
+                    property var plate: plate
+                    property var figure: figure
+                    property var front: front
+                    property var sun: live.meta?.sun ? sunImg : figure    // (something to bind when there's no sun)
+                    property vector4d sunAt: live.meta?.sun ? Qt.vector4d(live.meta.sun[0], live.meta.sun[1], live.meta.sun[2], 1) : Qt.vector4d(0, 0, 1, 0)
+                    // versioned: Qt keeps a compiled shader for as long as the shell runs, so a rebuilt one needs a new name
+                    fragmentShader: Qt.resolvedUrl("../shaders/livewall.frag.qsb") + "?5"
                 }
             }
 

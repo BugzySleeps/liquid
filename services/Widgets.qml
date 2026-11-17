@@ -16,18 +16,19 @@ import "../components/Shapes.js" as Shapes
 Singleton {
     id: root
 
-    // w/h: starting size · minW/minH: smallest it resizes to · single: only one allowed · props: its settings
+    // w/h: starting size · minW/minH: smallest it shows everything at · tiny: [w, h] of the content in its
+    // compact layout (only some have one), so it resizes smaller still · single: only one allowed · props: its settings
     readonly property var types: ({
         clock: { title: "clock", icon: "󰥔", desc: "digital or analog", w: 272, h: 128, minW: 144, minH: 80, props: { style: "digital", seconds: true } },
         calendar: { title: "calendar", icon: "󰃭", desc: "this month, today filled in", w: 256, h: 240, minW: 208, minH: 208, props: {} },
-        weather: { title: "weather", icon: "󰖐", desc: "now and the next 3 days", w: 272, h: 160, minW: 208, minH: 128, props: { city: "", units: "celsius", place: "sharing" } },
+        weather: { title: "weather", icon: "󰖐", desc: "now and the next 3 days", w: 272, h: 160, minW: 208, minH: 128, tiny: [96, 72], props: { city: "", units: "celsius", place: "sharing" } },
         fetch: { title: "fetch", icon: "󰆍", desc: "your system, terminal style", w: 384, h: 224, minW: 304, minH: 192, props: {} },
-        media: { title: "now playing", icon: "󰝚", desc: "art, track and controls", w: 352, h: 160, minW: 288, minH: 128, single: true, props: {} },
+        media: { title: "now playing", icon: "󰝚", desc: "art, track and controls", w: 352, h: 160, minW: 288, minH: 128, tiny: [96, 96], single: true, props: {} },
         lyrics: { title: "lyrics", icon: "󰎈", desc: "synced lyrics (lrclib.net)", w: 464, h: 144, minW: 256, minH: 96, single: true, props: {} },
         bars: { title: "visualizer", icon: "󰺢", desc: "big cava bars", w: 368, h: 128, minW: 160, minH: 64, props: {} },
         note: { title: "note", icon: "󰎚", desc: "double-click to type", w: 224, h: 160, minW: 128, minH: 80, props: { text: "", size: 13, shared: true } },
         image: { title: "image", icon: "󰋩", desc: "any picture, tinted green", w: 240, h: 240, minW: 80, minH: 80, props: { path: "", tint: true } },
-        claude: { title: "claude", icon: "✻", desc: "claude code token usage", w: 320, h: 224, minW: 256, minH: 192, props: {} }
+        claude: { title: "claude", icon: "✻", desc: "claude code token usage", w: 320, h: 224, minW: 256, minH: 192, tiny: [112, 72], props: {} }
     })
     readonly property var order: ["clock", "calendar", "weather", "fetch", "media", "lyrics", "bars", "note", "image", "claude"]
 
@@ -177,18 +178,53 @@ Singleton {
         save();
     }
 
-    // a widget's shape (components/Shapes.js): all but box and pill square it up, big enough for what's inside
-    function shapeMin(type, shape) {
-        const t = types[type], k = Shapes.inner(Shapes.rays(shape, 1, 1, 0), Math.min(1, t.h / t.w));
-        return type === "image" ? Math.max(t.minW, t.minH) : snapped(Math.max(t.minW / k[0], t.minH / k[1]) + 12);
+    // the content's smallest size with everything in it (what a framed box at minW × minH leaves it), and
+    // with its compact layout if it has one (which it switches to below `need`)
+    function need(type) {
+        const t = types[type];
+        return [t.minW - 28, t.minH - 28];
+    }
+    function least(type) {
+        return types[type].tiny ?? need(type);
+    }
+
+    // a widget's shape (components/Shapes.js): any proportions, but in a shape the content only gets the box
+    // that fits inside it, so a W × H widget too small for that grows (keeping its proportions) till it fits
+    function shapeSize(type, shape, W, H, angle) {
+        const l = least(type), up = v => snap ? Math.ceil(v / grid) * grid : Math.ceil(v);
+        if (type === "image")
+            return [Math.max(W, types.image.minW), Math.max(H, types.image.minH)];
+        W = Math.max(W, l[0] + 28);
+        H = Math.max(H, l[1] + 28);
+        if (!shape || shape === "box")
+            return [W, H];
+        const tilt = Shapes.free(shape) ? 0 : (angle ?? 0) / 360;
+        const fits = s => Shapes.fit(Shapes.turned(Shapes.rays(shape, W * s, H * s, 0), tilt), W * s, H * s, l[0], l[1], 6)[2];
+        if (fits(1))
+            return [W, H];
+        let lo = 1, hi = 4;                      // bigger always fits better: find how much bigger
+        for (let i = 0; i < 10; i++) {
+            const mid = (lo + hi) / 2;
+            if (fits(mid))
+                hi = mid;
+            else
+                lo = mid;
+        }
+        return [up(W * hi), up(H * hi)];
     }
     function setShape(w, shape) {
-        if (!Shapes.free(shape)) {
-            const side = Math.max(shapeMin(w.type, shape), snapped(Math.sqrt(w.w * w.h)));
-            w.w = side;
-            w.h = side;
-        }
+        const size = shapeSize(w.type, shape, w.w, w.h, w.props.angle);
+        w.w = size[0];
+        w.h = size[1];
         setProp(w, "shape", shape);
+    }
+    // the shape's tilt (props.angle, degrees): only the outline turns, the content stays upright inside it
+    function setAngle(w, deg) {
+        deg = Math.max(0, Math.min(360, Math.round(deg)));
+        const size = shapeSize(w.type, w.props.shape, w.w, w.h, deg);
+        w.w = size[0];
+        w.h = size[1];
+        setProp(w, "angle", deg);
     }
 
     function setProp(w, key, value) {
