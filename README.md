@@ -107,8 +107,11 @@ These are bound in Hyprland (`hyprland.lua` in the dotfiles), each one an IPC ca
   a droplet and drips away while the rest close up; **clear all** drains the whole stack, bottom first
   (`qs -c ekitai ipc call notifs clear`). Clicking one runs its default action.
 - **music panel:** the cover blurred and tinted through the whole panel, a waterline visualizer, synced lyrics
-  (lrclib), a seek bar and controls; cmus's **library** and queue; **art** (the shell and window borders take the
-  album cover's colours, track by track); and a 10-band **eq** that works on everything playing, live, inside each
+  (lrclib), a seek bar and controls; cmus's **library** and queue; **art** (the shell, window borders and
+  terminals take the album cover's colours, track by track); an **album wallpaper** (settings → look, with art on: a wallpaper
+  made from the cover's colours, with the cover and the song on it and a design that moves with the music: waves,
+  aurora, drips, a glass orb, or shuffle for one per album; `rice accent --wall` makes the backdrop,
+  `shaders/artwall.frag` draws the design); and a 10-band **eq** that works on everything playing, live, inside each
   stream's own PipeWire converter.
 - **launcher:** type to search apps. The first character switches mode (or click the chips):
   - `=` calculator · `:` emoji (types it into your window) · `/` files in your home folder
@@ -180,7 +183,7 @@ welcome/         the first-run welcome
 components/      shared pieces (Frame, Pool, Logo, ...)
 services/        state singletons (audio, media, notifications, lock, settings, ...)
 config/          colours, sizes and fonts, the keybind list
-shaders/         liquid.frag (+ the compiled .qsb)
+shaders/         liquid.frag, glass.frag, artwall.frag (+ the compiled .qsb)
 sounds/          the sounds and make.py
 assets/logo/     the logo
 ```

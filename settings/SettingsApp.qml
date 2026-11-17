@@ -251,6 +251,27 @@ PanelWindow {
                             }
                         }
                         Option {
+                            title: "album wallpaper"
+                            hint: "with colour from album art on, the wallpaper is made from the cover's colours too, with the cover and the song on it, and a design that moves with the music: waves, aurora, drips, a glass orb, or shuffle for one per album. still in performance mode."
+                            enabled: Settings.artAccent
+                            opacity: enabled ? 1 : 0.4
+                            Chip {
+                                text: Settings.artWall ? "󰸉 on" : "off"
+                                on: Settings.artWall
+                                onClicked: Settings.set("artWall", !Settings.artWall)
+                            }
+                            Repeater {
+                                model: ["waves", "aurora", "drips", "orb", "shuffle"]
+                                Chip {
+                                    required property string modelData
+                                    visible: Settings.artWall
+                                    text: modelData
+                                    on: Settings.artWallStyle === modelData
+                                    onClicked: Settings.set("artWallStyle", modelData)
+                                }
+                            }
+                        }
+                        Option {
                             title: "liquid glass"
                             hint: "the bar, panels and widgets turn to glass: the wallpaper frosted behind them, bent at the rim, light on the edge. drawn by the shell, so it's light on the gpu."
                             Chip {

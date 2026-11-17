@@ -28,6 +28,9 @@ Singleton {
 
     readonly property string wallpaper: data.wallpaper ?? ""
     readonly property string theme: data.name ?? ""
+    // with the album wallpaper up: the cover, and the wallpaper it's standing in for (what looks are kept by)
+    readonly property var art: data.art ?? null
+    readonly property string homeWallpaper: data.home_wallpaper || wallpaper
 
     // ── reading + crossfading ──────────────────────────────
     readonly property var keys: ["bg", "bg1", "bg2", "bg3", "accent", "mid", "dim", "faint", "bright", "alert"]

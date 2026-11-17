@@ -647,8 +647,8 @@ PanelWindow {
                             // every icon recoloured into the one green (black when its row is selected)
                             layer.enabled: visible
                             layer.effect: Colorize {
-                                hue: Colors.accent.hslHue
-                                saturation: 0.7
+                                hue: Math.max(0, Colors.accent.hslHue)
+                                saturation: Colors.accent.hslSaturation < 0.05 ? 0 : 0.7   // a grey theme has no hue: grey, not red
                                 lightness: row.current ? -1 : -0.05
                             }
                         }

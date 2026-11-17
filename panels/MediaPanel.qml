@@ -61,8 +61,8 @@ Panel {
                 anchors.fill: parent
                 source: blurred
                 visible: cover.status === Image.Ready
-                hue: Colors.accent.hslHue
-                saturation: 0.6
+                hue: Math.max(0, Colors.accent.hslHue)
+                saturation: Colors.accent.hslSaturation < 0.05 ? 0 : 0.6   // a grey theme has no hue: grey, not red
                 lightness: -0.35
                 opacity: 0.55
             }

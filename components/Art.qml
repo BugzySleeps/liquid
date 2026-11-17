@@ -51,8 +51,8 @@ Item {
             sourceSize.height: root.sourceSize
             layer.enabled: true
             layer.effect: Colorize {
-                hue: Colors.accent.hslHue
-                saturation: 0.7
+                hue: Math.max(0, Colors.accent.hslHue)
+                saturation: Colors.accent.hslSaturation < 0.05 ? 0 : 0.7   // a grey theme has no hue: grey, not red
                 lightness: -0.1
             }
         }

@@ -16,6 +16,7 @@ Singleton {
     readonly property bool playing: player?.isPlaying ?? false
     readonly property string title: player?.trackTitle || "nothing playing"
     readonly property string artist: player?.trackArtist || ""
+    readonly property string album: player?.trackAlbum || ""
     readonly property string art: player?.trackArtUrl || embeddedArt
     readonly property string source: player?.identity || ""
     readonly property real length: player?.length ?? 0
@@ -35,19 +36,25 @@ Singleton {
 
     onPlayerChanged: position = player?.position ?? 0
 
-    // colours from the album art (Settings.artAccent): `rice accent` recolours the shell and the borders
-    // for the track, and puts the usual colours back when it's off or nothing's playing
-    readonly property string accentFrom: Settings.loaded && Settings.artAccent && active ? art : ""
-    property string accentNow: ""
+    // colours from the album art (Settings.artAccent): `rice accent` recolours the shell, the borders and the
+    // terminals for the track, and puts the usual colours back when it's off or nothing's playing. With the
+    // album wallpaper on as well (Settings.artWall) the wallpaper comes from the cover too (desktop/Wallpaper.qml)
+    readonly property bool artWall: Settings.artAccent && Settings.artWall
+    readonly property string accentFrom: Settings.loaded && Settings.artAccent && active && art ? (artWall ? "wall|" : "") + art : ""
+    // unknown at start: a restarted shell can't tell what the last one left up, so the first look always applies
+    property string accentNow: "?"
     onAccentFromChanged: accentLater.restart()
     Timer {
         id: accentLater
-        interval: 800                            // skipping through tracks doesn't recolour every one
+        interval: 350                            // skipping through tracks doesn't recolour every one
+        running: Settings.loaded
         onTriggered: {
-            if (root.accentFrom === root.accentNow)
+            if (!Settings.loaded || root.accentFrom === root.accentNow)
                 return;
             root.accentNow = root.accentFrom;
-            Quickshell.execDetached(["sh", "-c", '~/.config/rice/rice accent "$1"', "sh", root.accentNow || "off"]);
+            const wall = root.accentNow.startsWith("wall|");
+            const from = wall ? root.accentNow.slice(5) : root.accentNow;
+            Quickshell.execDetached(["sh", "-c", '~/.config/rice/rice accent "$@"', "sh", from || "off"].concat(wall ? ["--wall"] : []));
         }
     }
 

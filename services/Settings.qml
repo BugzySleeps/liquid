@@ -23,6 +23,10 @@ Singleton {
 
     // while music plays, the shell and window borders take their colours from the album art
     property bool artAccent: false
+    // ...and (only with artAccent on) the wallpaper turns into one made from the cover's colours, with the cover and the song on it
+    property bool artWall: false
+    // its design (shaders/artwall.frag): "waves", "aurora", "drips", "orb", or "shuffle" (one per album)
+    property string artWallStyle: "waves"
 
     // each wallpaper keeps its own shape and widget layout (Themes)
     property bool perWall: true
@@ -87,7 +91,7 @@ Singleton {
         onLoaded: {
             try {
                 const d = JSON.parse(text());
-                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "hideIdleMusic", "perWall"])
+                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "artWall", "hideIdleMusic", "perWall"])
                     if (typeof d[k] === "boolean")
                         root[k] = d[k];
                 if (["island", "vial"].includes(d.osdStyle))
@@ -95,6 +99,8 @@ Singleton {
                 for (const k of ["islandTracks", "islandNotifs", "lockMuffle"])
                     if (typeof d[k] === "boolean")
                         root[k] = d[k];
+                if (["waves", "aurora", "drips", "orb", "shuffle"].includes(d.artWallStyle))
+                    root.artWallStyle = d.artWallStyle;
                 if (["parallax", "canvas", "pinned"].includes(d.canvasWidgets))
                     root.canvasWidgets = d.canvasWidgets;
                 if (["strip", "islands"].includes(d.barStyle))
@@ -134,7 +140,7 @@ Singleton {
     Timer {
         id: saveLater
         interval: 300
-        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, canvasWidgets: root.canvasWidgets, artAccent: root.artAccent, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
+        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, canvasWidgets: root.canvasWidgets, artAccent: root.artAccent, artWall: root.artWall, artWallStyle: root.artWallStyle, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
     }
 
     IpcHandler {

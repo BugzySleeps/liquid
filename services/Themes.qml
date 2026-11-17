@@ -24,7 +24,7 @@ Singleton {
     onReadyChanged: follow()
     Connections {
         target: Colors
-        function onWallpaperChanged() {
+        function onHomeWallpaperChanged() {
             root.follow();
         }
     }
@@ -34,7 +34,7 @@ Singleton {
     }
 
     function follow() {
-        const wall = Colors.wallpaper;
+        const wall = Colors.homeWallpaper;          // not the album wallpaper: that's still this one's look
         if (!ready || !wall || wall === current)
             return;
         if (current && Settings.perWall) {

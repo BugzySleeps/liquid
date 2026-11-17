@@ -23,8 +23,8 @@ Item {
         sourceSize.width: Math.max(256, root.width * 2)
         layer.enabled: root.wd?.props.tint ?? true
         layer.effect: Colorize {
-            hue: Colors.accent.hslHue
-            saturation: 0.75
+            hue: Math.max(0, Colors.accent.hslHue)
+            saturation: Colors.accent.hslSaturation < 0.05 ? 0 : 0.75   // a grey theme has no hue: grey, not red
             lightness: -0.05
         }
     }

@@ -241,8 +241,8 @@ PanelWindow {
                                 source: Quickshell.iconPath(card.modelData.cls.toLowerCase(), true) || Quickshell.iconPath(DesktopEntries.heuristicLookup(card.modelData.cls)?.icon ?? "", true) || Quickshell.iconPath("application-x-executable")
                                 layer.enabled: true
                                 layer.effect: Colorize {
-                                    hue: Colors.accent.hslHue
-                                    saturation: 0.7
+                                    hue: Math.max(0, Colors.accent.hslHue)
+                                    saturation: Colors.accent.hslSaturation < 0.05 ? 0 : 0.7   // a grey theme has no hue: grey, not red
                                     lightness: -0.05
                                 }
                             }
