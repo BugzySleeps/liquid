@@ -179,7 +179,7 @@ footer { padding: 56px 0 40px; color: var(--accent2); font-size: 14px; text-alig
 
   <section id="tour">
     <h2>the tour</h2>
-    <p class="sub">1:13, with sound and a real mouse: the lock screen's water, the idle tide, notification sounds. The song in the music part is muted.</p>
+    <p class="sub">2:12, driven with a real mouse: every feature, from the lock screen to the idle tide. Muted.</p>
     <div class="tour">
       <video id="video" controls preload="metadata" playsinline poster="screenshots/lock.png">
         <source src="tour.mp4" type="video/mp4">
@@ -233,9 +233,10 @@ qs -c ekitai</pre>
 <script>
 // the tour's chapters: [seconds, name]
 const chapters = [
-  [0, "desktop"], [1, "lock screen"], [6.5, "a wrong password"], [9.1, "unlocking"],
-  [12.9, "idle tide"], [22.4, "notifications"], [30.7, "shapes and glass"], [37, "launcher"],
-  [41.9, "a wallpaper is a theme"], [47.5, "widget shapes"], [56.9, "music"], [66, "workspace overview"],
+  [0, "lock screen"], [11.2, "the claude wallpaper"], [13.9, "the bar"], [17.4, "the island"],
+  [25.6, "notifications"], [29.1, "control centre: shapes and glass"], [43.2, "music: library, playlists, eq"],
+  [65.3, "launcher"], [73.6, "clipboard"], [75.5, "screenshots"], [81.2, "wallpapers"], [92.6, "widgets"],
+  [98.7, "overview and switcher"], [105.8, "settings"], [117.5, "welcome"], [122.6, "idle tide"],
 ];
 const video = document.getElementById("video");
 const list = document.getElementById("chapters");

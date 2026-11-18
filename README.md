@@ -16,9 +16,10 @@ scripts it calls. See [Needs](#needs).
 
 <p align="center"><img src="docs/lock-intro.gif" alt="the lock screen's login intro" width="800"></p>
 
-**[▶ Watch the tour on the site](https://bugzysleeps.github.io/liquid/#tour)** (1:13, with sound, with chapters): the lock screen and its water sounds, the idle tide, the
-notification timeline, shapes and glass, the launcher, a wallpaper bringing its own theme, widget shapes, music and
-the workspace overview, driven with a real mouse. The song in the music part is muted.
+**[▶ Watch the tour on the site](https://bugzysleeps.github.io/liquid/#tour)** (2:12, muted, with chapters): the lock
+screen, the music-reactive claude wallpaper, the bar, the island, notifications, shapes and glass, music with cmus's
+library, playlists and the eq, the launcher, clipboard, screenshots, wallpapers, widgets, the overview, settings and the
+idle tide, driven with a real mouse.
 
 | | |
 | --- | --- |
