@@ -170,6 +170,29 @@ Frame {
             }
         }
 
+        // ── depth (desktop widgets, with Settings.depth) ───────────
+        Column {
+            visible: box.w?.board === "desktop" && Settings.depth
+            width: parent.width
+            spacing: 5
+            Label {
+                text: "DEPTH"
+            }
+            Row {
+                spacing: 4
+                Repeater {
+                    // auto: by its size, bigger ones nearer
+                    model: ["auto", "near", "mid", "far"]
+                    Chip {
+                        required property string modelData
+                        text: modelData
+                        on: (box.w?.props.depth ?? "auto") === modelData
+                        onClicked: Widgets.setProp(box.w, "depth", modelData)
+                    }
+                }
+            }
+        }
+
         // ── shape (round and squiggle) ───────────
         Column {
             width: parent.width

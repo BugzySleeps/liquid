@@ -47,6 +47,9 @@ PanelWindow {
     readonly property real level: fill * rest    // 0 empty … 1 full
     property real rough: 1                       // extra chop while it floods in
     property real t: 0                           // everything else fades in with it
+    // built only while open (shell.qml, Lazy): opened as it's built
+    Component.onCompleted: if (open)
+        openChanged()
     // the surface settles just under the grid, so the bottom row floats on it
     // (from the tile sizes, not grid.height, and a binding: the window has no size until it's first shown)
     readonly property real gridH: rows * (tileH + 26) + (rows - 1) * gap
@@ -201,18 +204,6 @@ PanelWindow {
         }
     }
 
-    IpcHandler {
-        target: "overview"
-        function toggle(): void {
-            Ui.overview = !Ui.overview;
-        }
-        function open(): void {
-            Ui.overview = true;
-        }
-        function close(): void {
-            Ui.overview = false;
-        }
-    }
 
     Item {
         id: keys

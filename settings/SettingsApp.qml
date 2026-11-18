@@ -14,7 +14,13 @@ PanelWindow {
     id: win
 
     readonly property bool open: Settings.open
-    property real t: open ? 1 : 0
+    // built only while open (shell.qml, Lazy): it starts closed and follows `open`, so it fades in all the same
+    property real t: 0
+    Component.onCompleted: {
+        t = Qt.binding(() => open ? 1 : 0);
+        if (open)
+            openChanged();
+    }
     Behavior on t {
         NumberAnimation {
             duration: win.open ? Style.med : Style.fast
@@ -37,10 +43,21 @@ PanelWindow {
         keys.forceActiveFocus();
     }
 
+    // a click outside closes it. The grab starts a moment after it opens: opened from a button in another panel
+    // (the control centre's gear), the rest of that click lands outside, which would close it straight away.
     HyprlandFocusGrab {
-        active: win.open
+        active: win.open && grabDelay.done
         windows: [win]
         onCleared: Settings.open = false
+    }
+    Timer {
+        id: grabDelay
+        property bool done: false
+        interval: 250
+        running: win.open
+        onRunningChanged: if (running)
+            done = false
+        onTriggered: done = true
     }
 
     // the wallpapers on offer (the picker's list)
@@ -211,6 +228,73 @@ PanelWindow {
                                     text: modelData[0] + " " + modelData[1]
                                     on: Look.shape === modelData[1]
                                     onClicked: Look.set(modelData[1])
+                                }
+                            }
+                        }
+                        // the font: too many choices for an Option's row, so they wrap underneath
+                        Column {
+                            id: fontOpt
+                            width: parent.width
+                            spacing: 6
+                            // a few that suit it (the ones installed), the ones you've added, and the one in use, each
+                            // written in itself
+                            readonly property var picks: {
+                                const out = ["Departure Mono", "VCR OSD Mono", "JetBrains Mono", "Iosevka", "Fira Code", "MesloLGS Nerd Font", "DejaVu Sans Mono", "Noto Sans Mono", "Inter", "Noto Sans", "Cantarell"].filter(f => Qt.fontFamilies().includes(f));
+                                for (const f of Fonts.families.concat([Settings.font]))
+                                    if (!out.includes(f))
+                                        out.push(f);
+                                return out;
+                            }
+                            Txt {
+                                text: "font  ·  " + Settings.font.toLowerCase()
+                                font.bold: true
+                                color: Colors.bright
+                            }
+                            Txt {
+                                width: parent.width
+                                text: "the shell's text" + (Settings.perWall ? ", kept per wallpaper" : "") + ". departure mono is a pixel font, crisp at fixed sizes; the others draw smooth. add your own (a font file, a .zip, or a mac .dmg / .pkg), or type any installed font's name."
+                                wrapMode: Text.WordWrap
+                                font.pixelSize: Style.small
+                                color: Colors.mid
+                            }
+                            Txt {
+                                visible: Fonts.error !== ""
+                                text: "couldn't add that: " + Fonts.error
+                                font.pixelSize: Style.small
+                                color: Colors.bright
+                            }
+                            Flow {
+                                width: parent.width
+                                spacing: 4
+                                Repeater {
+                                    model: fontOpt.picks
+                                    Chip {
+                                        required property string modelData
+                                        text: modelData.toLowerCase()
+                                        family: modelData
+                                        on: Settings.font === modelData
+                                        onClicked: Settings.set("font", modelData)
+                                    }
+                                }
+                                Chip {
+                                    text: Fonts.busy ? "󰔟 adding…" : "󰐕 add a font"
+                                    onClicked: Fonts.add("")
+                                }
+                                Field {
+                                    width: 170
+                                    height: 22
+                                    placeholder: "font name or file…"
+                                    onSubmitted: t => {
+                                        t = t.trim();
+                                        if (t.startsWith("/") || t.startsWith("~")) {   // a file: add it
+                                            Fonts.add(t);
+                                        } else {        // a name: matched without caring about case; only installed ones
+                                            const f = Qt.fontFamilies().find(x => x.toLowerCase() === t.toLowerCase());
+                                            if (f)
+                                                Settings.set("font", f);
+                                        }
+                                        text = "";
+                                    }
                                 }
                             }
                         }
@@ -473,6 +557,11 @@ PanelWindow {
                                 on: Settings.islandNotifs
                                 onClicked: Settings.set("islandNotifs", !Settings.islandNotifs)
                             }
+                            Chip {
+                                text: "claude"
+                                on: Settings.islandClaude
+                                onClicked: Settings.set("islandClaude", !Settings.islandClaude)
+                            }
                         }
                         Option {
                             title: "window title"
@@ -517,6 +606,20 @@ PanelWindow {
                                     Settings.open = false;
                                     Widgets.edit("desktop");
                                 }
+                            }
+                        }
+                        Option {
+                            title: "depth"
+                            hint: "the widgets float over the wallpaper: they lean away from the pointer (near ones more), cast shadows, and sink back while windows are open. each widget's own depth is in its settings. paused in performance mode."
+                            Chip {
+                                text: "off"
+                                on: !Settings.depth
+                                onClicked: Settings.set("depth", false)
+                            }
+                            Chip {
+                                text: "󰆧 on"
+                                on: Settings.depth
+                                onClicked: Settings.set("depth", true)
                             }
                         }
                         Option {

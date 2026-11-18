@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.config
 
 // The settings app's own options (the rest live where they always did: Look, Widgets, Eq, wallpapers),
 // saved to ~/.local/state/ekitai/settings.json. The app itself is settings/SettingsApp.qml (SUPER+I).
@@ -30,12 +31,24 @@ Singleton {
     // its design (shaders/artwall.frag): "waves", "aurora", "drips", "orb", or "shuffle" (one per album)
     property string artWallStyle: "waves"
 
+    // the shell's font (settings → look → font): any installed family; Style.font follows it
+    property string font: "Departure Mono"
+    Binding {
+        target: Style
+        property: "font"
+        value: root.font
+    }
+
     // each wallpaper keeps its own shape and widget layout (Themes)
     property bool perWall: true
 
     // the desktop widgets as the row of windows scrolls (Drift): "parallax" (drift behind, slower), "canvas"
     // (scroll with the windows) or "pinned" (stay put)
     property string canvasWidgets: "parallax"
+
+    // the desktop widgets float at depths over the wallpaper: they lean from the pointer, cast shadows, and
+    // sink back while windows are open (Drift)
+    property bool depth: true
 
     // music, lyrics and visualizer widgets hide while nothing's playing (off: they always show)
     property bool hideIdleMusic: false
@@ -44,6 +57,7 @@ Singleton {
     property string osdStyle: "island"           // volume / brightness: "island", or "vial" (the side indicator)
     property bool islandTracks: true             // a new track swells it with the cover
     property bool islandNotifs: true             // simple notifications show in it instead of a popup
+    property bool islandClaude: true             // Claude Code finishing, or waiting on you (config/rice/claude-island)
 
     // music sounds underwater while the lock screen's up
     property bool lockMuffle: true
@@ -93,16 +107,18 @@ Singleton {
         onLoaded: {
             try {
                 const d = JSON.parse(text());
-                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "artWall", "liveWall", "hideIdleMusic", "perWall"])
+                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "artWall", "liveWall", "hideIdleMusic", "perWall", "depth"])
                     if (typeof d[k] === "boolean")
                         root[k] = d[k];
                 if (["island", "vial"].includes(d.osdStyle))
                     root.osdStyle = d.osdStyle;
-                for (const k of ["islandTracks", "islandNotifs", "lockMuffle"])
+                for (const k of ["islandTracks", "islandNotifs", "islandClaude", "lockMuffle"])
                     if (typeof d[k] === "boolean")
                         root[k] = d[k];
                 if (["waves", "aurora", "drips", "orb", "shuffle"].includes(d.artWallStyle))
                     root.artWallStyle = d.artWallStyle;
+                if (typeof d.font === "string" && d.font)   // (one you added loads a moment later: Fonts)
+                    root.font = d.font;
                 if (["parallax", "canvas", "pinned"].includes(d.canvasWidgets))
                     root.canvasWidgets = d.canvasWidgets;
                 if (["strip", "islands"].includes(d.barStyle))
@@ -142,7 +158,7 @@ Singleton {
     Timer {
         id: saveLater
         interval: 300
-        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, canvasWidgets: root.canvasWidgets, artAccent: root.artAccent, artWall: root.artWall, artWallStyle: root.artWallStyle, liveWall: root.liveWall, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
+        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, canvasWidgets: root.canvasWidgets, depth: root.depth, font: root.font, artAccent: root.artAccent, artWall: root.artWall, artWallStyle: root.artWallStyle, liveWall: root.liveWall, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, islandClaude: root.islandClaude, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
     }
 
     IpcHandler {

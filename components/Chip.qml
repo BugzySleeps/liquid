@@ -9,6 +9,7 @@ Frame {
     property string text: ""
     property bool on: false
     property int minWidth: 26
+    property string family: ""                   // a font of its own (the font picker writes each in itself)
     signal clicked
 
     implicitWidth: Math.max(minWidth, label.implicitWidth + 14)
@@ -20,6 +21,7 @@ Frame {
         anchors.centerIn: parent
         text: root.text
         font.pixelSize: Style.small
+        font.family: root.family || Style.font
         font.bold: root.on
         color: root.on ? Colors.bg : Colors.accent
     }

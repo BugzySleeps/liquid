@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import qs.config
 import qs.services
 import qs.components
@@ -35,14 +36,101 @@ Item {
     // an analog clock's round face fills the biggest circle in the shape, not its biggest box
     readonly property bool roundFace: shaped && w.type === "clock" && w.props.style === "analog"
 
+    // opened: a calendar's day card swells into the whole month (not saved: only while you look at it). It grows
+    // out from its middle, nudged to stay on the screen, springing like the island, and closes by itself once the
+    // pointer has been away a few seconds.
+    property bool opened: false
+    onEditingChanged: opened = false
+    onOpenedChanged: squash.restart()
+    // a squash and stretch as it opens or closes, like something soft being poked; and its depth (below)
+    transform: [
+        Translate {
+            x: frame.leanX
+            y: frame.leanY
+        },
+        Scale {
+            origin.x: frame.width / 2
+            origin.y: frame.height / 2
+            xScale: frame.depthScale
+            yScale: frame.depthScale
+        },
+        Scale {
+            id: poke
+            origin.x: frame.width / 2
+            origin.y: frame.height / 2
+        }
+    ]
+    SequentialAnimation {
+        id: squash
+        ParallelAnimation {
+            NumberAnimation {
+                target: poke
+                property: "xScale"
+                to: 1.06
+                duration: 90
+                easing.type: Easing.OutQuad
+            }
+            NumberAnimation {
+                target: poke
+                property: "yScale"
+                to: 0.9
+                duration: 90
+                easing.type: Easing.OutQuad
+            }
+        }
+        ParallelAnimation {
+            NumberAnimation {
+                target: poke
+                property: "xScale"
+                to: 1
+                duration: 520
+                easing.type: Easing.OutElastic
+                easing.amplitude: 1.1
+                easing.period: 0.45
+            }
+            NumberAnimation {
+                target: poke
+                property: "yScale"
+                to: 1
+                duration: 520
+                easing.type: Easing.OutElastic
+                easing.amplitude: 1.1
+                easing.period: 0.45
+            }
+        }
+    }
+    readonly property size openSize: Qt.size(Math.max(w.w, 256), Math.max(w.h, 252))
+    property real grow: opened ? 1 : 0
+    Behavior on grow {
+        SpringAnimation {
+            spring: 3.2
+            damping: 0.3
+            epsilon: 0.002
+        }
+    }
+    readonly property real shownW: w.w + (openSize.width - w.w) * grow
+    readonly property real shownH: w.h + (openSize.height - w.h) * grow
+    // how far left / up it moves to grow round its middle and stay on screen
+    readonly property real shiftX: !parent ? 0 : w.x - Math.max(0, Math.min(parent.width - shownW, w.x + (w.w - shownW) / 2))
+    readonly property real shiftY: !parent ? 0 : w.y - Math.max(0, Math.min(parent.height - shownH, w.y + (w.h - shownH) / 2))
+    HoverHandler {
+        id: openHover
+        enabled: frame.opened
+    }
+    Timer {
+        running: frame.opened && !openHover.hovered
+        interval: 3500
+        onTriggered: frame.opened = false
+    }
+
     // the desktop's move with the row of windows as it scrolls (Drift)
-    x: w.x + (w.board === "desktop" ? Drift.shift : 0)
+    x: w.x - shiftX + (w.board === "desktop" ? Drift.shift : 0)
     // floating: a quarter of it under the surface
-    y: floating ? surface(w.x + w.w / 2) - w.h * 0.75 : w.y
+    y: floating ? surface(w.x + w.w / 2) - w.h * 0.75 : w.y - shiftY
     rotation: floating ? Math.atan((surface(w.x + w.w / 2 + 80) - surface(w.x + w.w / 2 - 80)) / 160) * 180 / Math.PI * 0.6 : 0
-    width: w.w
-    height: w.h
-    z: selected ? 3 : 1
+    width: shownW
+    height: shownH
+    z: selected || grow > 0.01 ? 3 : 1
     Behavior on x {
         enabled: Widgets.gliding
         NumberAnimation { duration: 750; easing.type: Easing.InOutCubic }
@@ -60,6 +148,15 @@ Item {
         NumberAnimation { duration: 750; easing.type: Easing.InOutCubic }
     }
 
+    // depth (Drift): a desktop widget leans away from the pointer, nearer ones further, and sinks back (smaller,
+    // dimmer, its shadow closer in) while windows are open; far ones sink further
+    readonly property bool deep: w.board === "desktop" && Drift.depthOn
+    readonly property real near: deep ? Drift.nearness(w) : 0
+    readonly property real leanX: deep ? -Drift.px * 16 * near : 0
+    readonly property real leanY: deep ? -Drift.py * 10 * near : 0
+    readonly property real depthScale: deep ? 1 - 0.07 * Drift.crowd * (1.3 - near) : 1
+    readonly property real depthFade: deep ? 1 - 0.28 * Drift.crowd * (1.2 - near) : 1
+
     property real shown: here ? 1 : editing ? 0.3 : 0
     Behavior on shown {
         NumberAnimation {
@@ -67,7 +164,7 @@ Item {
             easing.type: Easing.OutCubic
         }
     }
-    opacity: shown
+    opacity: shown * depthFade
     visible: shown > 0
     scale: here || editing ? 1 : 0.95
     Behavior on scale {
@@ -75,6 +172,20 @@ Item {
             duration: Style.med
             easing.type: Easing.OutCubic
         }
+    }
+
+    // its shadow on the wallpaper: softer and further the nearer it floats, sliding the other way to its lean,
+    // drawn in close while it's sunk back (round for a shape: near enough for every one)
+    RectangularShadow {
+        anchors.fill: parent
+        visible: frame.deep && frame.bgShown > 0.05 && (frame.w.frame || frame.shaped) && !frame.fills
+        z: -1
+        radius: frame.shaped ? Math.min(width, height) / 2.4 : Look.r(width, height)
+        offset.x: -frame.leanX * 0.8
+        offset.y: (6 + 12 * frame.near) * (1 - 0.5 * Drift.crowd) - frame.leanY * 0.8
+        blur: (14 + 26 * frame.near) * (1 - 0.4 * Drift.crowd)
+        spread: -4
+        color: Qt.rgba(0, 0, 0, (0.28 + 0.22 * frame.near) * frame.bgShown)
     }
 
     // the box, or its shape
@@ -185,6 +296,8 @@ Item {
         id: calendarW
         CalendarW {
             wd: frame.w
+            open: frame.opened
+            onToggle: frame.opened = !frame.opened
         }
     }
     Component {

@@ -84,20 +84,6 @@ PanelWindow {
         onExited: win.open = false
     }
 
-    IpcHandler {
-        target: "shot"
-        function edit(path: string): void {
-            win.edit(path);
-        }
-        function save(): void {                  // what Enter does: save + copy
-            if (win.open)
-                win.finish(true, true);
-        }
-        function discard(): void {
-            if (win.open)
-                win.discard();
-        }
-    }
 
     // ── keys ──
     Item {

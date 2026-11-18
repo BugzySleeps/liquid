@@ -74,18 +74,6 @@ PanelWindow {
         stir.restart();
     }
 
-    IpcHandler {
-        target: "welcome"
-        function open(): void {                  // (not "show": that's one of qs ipc's own words)
-            win.show();
-        }
-        function close(): void {
-            win.open = false;
-        }
-        function step(n: int): void {            // jump to a step (0-3), for a look
-            win.go(n);
-        }
-    }
 
     // ── the liquid: floods in, rises a little each step, drains at the end ──
     property real fill: 0

@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Each wallpaper remembers its own look: the shape (square / round / squiggle), liquid glass (on, and its style), and its own set
+// Each wallpaper remembers its own look: the shape (square / round / squiggle), the font, liquid glass (on, and its style), and its own set
 // of desktop widgets (which ones, where, how big, their shapes and settings). Switching wallpapers keeps the
 // one you're leaving and brings back the one you're going to (widgets glide there, or come and go); a
 // wallpaper you've never used starts from what's on screen. The lock screen's widgets stay shared.
@@ -19,7 +19,7 @@ Singleton {
     property var profiles: ({})
     property string current: ""                  // the wallpaper whose look is on screen
     property bool loaded: false
-    readonly property bool ready: loaded && Look.loaded && Widgets.restored && Colors.loaded
+    readonly property bool ready: loaded && Look.loaded && Widgets.restored && Colors.loaded && Settings.loaded
 
     onReadyChanged: follow()
     Connections {
@@ -30,7 +30,7 @@ Singleton {
     }
 
     function snapshot() {
-        return { look: Look.shape, glass: Look.glass, glassLook: Look.glassLook(), desktop: Widgets.desktop() };
+        return { look: Look.shape, font: Settings.font, glass: Look.glass, glassLook: Look.glassLook(), desktop: Widgets.desktop() };
     }
 
     function follow() {
@@ -48,6 +48,8 @@ Singleton {
 
     function apply(p) {
         Look.set(p.look);
+        if (p.font)                              // (saved before fonts were per wallpaper: keeps the one on screen)
+            Settings.set("font", p.font);
         if (typeof p.glass === "boolean")
             Look.setGlass(p.glass);
         if (p.glassLook)

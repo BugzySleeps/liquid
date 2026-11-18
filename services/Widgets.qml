@@ -20,7 +20,7 @@ Singleton {
     // compact layout (only some have one), so it resizes smaller still · single: only one allowed · props: its settings
     readonly property var types: ({
         clock: { title: "clock", icon: "󰥔", desc: "digital or analog", w: 272, h: 128, minW: 144, minH: 80, props: { style: "digital", seconds: true } },
-        calendar: { title: "calendar", icon: "󰃭", desc: "this month, today filled in", w: 256, h: 240, minW: 208, minH: 208, props: {} },
+        calendar: { title: "calendar", icon: "󰃭", desc: "today; click it for the month", w: 128, h: 128, minW: 96, minH: 96, props: {} },
         weather: { title: "weather", icon: "󰖐", desc: "now and the next 3 days", w: 272, h: 160, minW: 208, minH: 128, tiny: [96, 72], props: { city: "", units: "celsius", place: "sharing" } },
         fetch: { title: "fetch", icon: "󰆍", desc: "your system, terminal style", w: 384, h: 224, minW: 304, minH: 192, props: {} },
         media: { title: "now playing", icon: "󰝚", desc: "art, track and controls", w: 352, h: 160, minW: 288, minH: 128, tiny: [96, 96], single: true, props: {} },

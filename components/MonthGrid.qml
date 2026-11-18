@@ -10,6 +10,15 @@ Column {
     property int offset: 0          // months from now
     property int cellHeight: 24
     property bool paging: true
+    property bool closable: false       // a × at the end of the header (the calendar widget, opened)
+    signal titleClicked                 // (the calendar widget folds back to its day card)
+    signal closeClicked
+
+    // the days pop in one after another, from the top-left (the calendar widget does this as it opens)
+    property int wave: 0
+    function cascade() {
+        wave++;
+    }
 
     readonly property date shown: new Date(clock.date.getFullYear(), clock.date.getMonth() + offset, 1)
 
@@ -30,10 +39,22 @@ Column {
             onClicked: root.offset--
         }
         Txt {
+            id: monthName
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignHCenter
-            text: Qt.formatDate(root.shown, "MMMM yyyy").toLowerCase()
+            // short ("nov 2026") when the full name won't fit
+            text: Qt.formatDate(root.shown, fullName.width > width ? "MMM yyyy" : "MMMM yyyy").toLowerCase()
+            TextMetrics {
+                id: fullName
+                font: monthName.font
+                text: Qt.formatDate(root.shown, "MMMM yyyy").toLowerCase()
+            }
             font.bold: true
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.titleClicked()
+            }
         }
         IconBtn {
             visible: root.paging
@@ -41,6 +62,13 @@ Column {
             size: 22
             iconSize: 12
             onClicked: root.offset++
+        }
+        IconBtn {
+            visible: root.closable
+            icon: "󰅖"
+            size: 22
+            iconSize: 12
+            onClicked: root.closeClicked()
         }
     }
 
@@ -75,6 +103,35 @@ Column {
                 width: grid.cell
                 height: root.cellHeight
                 color: today ? Colors.accent : "transparent"
+                property real pop: 1
+                opacity: pop
+                scale: 0.5 + 0.5 * pop
+                Connections {
+                    target: root
+                    function onWaveChanged() {
+                        popIn.restart();
+                    }
+                }
+                SequentialAnimation {
+                    id: popIn
+                    PropertyAction {
+                        target: parent
+                        property: "pop"
+                        value: 0
+                    }
+                    // a diagonal sweep: row + column
+                    PauseAnimation {
+                        duration: 60 + (Math.floor(parent.index / 7) + parent.index % 7) * 22
+                    }
+                    NumberAnimation {
+                        target: parent
+                        property: "pop"
+                        to: 1
+                        duration: 320
+                        easing.type: Easing.OutBack
+                        easing.overshoot: 2
+                    }
+                }
                 border.width: dayArea.containsMouse && !today ? Style.line : 0
                 border.color: Colors.accent
                 Txt {

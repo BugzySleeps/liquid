@@ -15,7 +15,13 @@ PanelWindow {
     id: win
 
     readonly property bool open: Ui.picker
-    property real t: open ? 1 : 0
+    // built only while open (shell.qml, Lazy): it starts closed and follows `open`, so it fades in all the same
+    property real t: 0
+    Component.onCompleted: {
+        t = Qt.binding(() => open ? 1 : 0);
+        if (open)
+            openChanged();
+    }
     Behavior on t {
         NumberAnimation {
             duration: win.open ? Style.med : Style.fast
@@ -111,12 +117,6 @@ PanelWindow {
         onExited: win.applying = null
     }
 
-    IpcHandler {
-        target: "wall"
-        function toggle(): void {
-            Ui.picker ? Ui.picker = false : Ui.openPicker();
-        }
-    }
 
     // ── keys ──────────────────────────────────────────────
     Item {

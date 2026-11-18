@@ -29,6 +29,44 @@ Scope {
             WlrLayershell.layer: WlrLayer.Background
             WlrLayershell.namespace: "ekitai-wallpaper"
 
+            // depth (Drift): zoomed in a touch, so it can slide a little (with the pointer, and as the infinite
+            // desktop pans) without showing its edges; the farthest layer, so it moves least
+            readonly property real zoom: Drift.depthOn ? 1.05 : 1
+            property real zoomShown: zoom
+            Behavior on zoomShown {
+                NumberAnimation {
+                    duration: 900
+                    easing.type: Easing.InOutCubic
+                }
+            }
+            Binding {
+                target: Drift
+                property: "roomX"
+                value: win.width * (win.zoom - 1) / 2
+                when: win.modelData === Quickshell.screens[0]
+            }
+            Binding {
+                target: Drift
+                property: "roomY"
+                value: win.height * (win.zoom - 1) / 2
+                when: win.modelData === Quickshell.screens[0]
+            }
+            Binding {
+                target: win.contentItem
+                property: "scale"
+                value: win.zoomShown
+            }
+            Binding {
+                target: win.contentItem
+                property: "x"
+                value: Drift.wallX
+            }
+            Binding {
+                target: win.contentItem
+                property: "y"
+                value: Drift.wallY
+            }
+
             // `top` shows the wallpaper; for a change, the old one moves to `under`, then the new one
             // loads into `top` and wipes up over it
             property string shown: ""
@@ -218,11 +256,14 @@ Scope {
                 property real flow: 0
                 property real energy: 0
                 property real beat: 0
-                Timer {                              // ~30 frames a second, and none in performance mode
-                    running: live.visible && !Perf.low
-                    interval: 33
+                // ~30 frames a second with music, 20 without; none in performance mode, or while windows cover the
+                // screen (Drift.covered: nobody's looking, it picks up where it was)
+                Timer {
+                    running: live.visible && !Perf.low && !Drift.covered
+                    interval: Media.playing ? 33 : 50
                     repeat: true
                     onTriggered: {
+                        const dt = interval / 1000;
                         const v = Cava.values, n = Math.min(10, v.length);
                         let e = 0, b = 0;
                         for (let i = 0; i < n; i++)
@@ -233,8 +274,8 @@ Scope {
                         b = n ? Math.min(1, b / Math.min(4, n) * 1.3) : 0;
                         live.energy += (e - live.energy) * (e > live.energy ? 0.2 : 0.04);
                         live.beat += (b - live.beat) * (b > live.beat ? 0.6 : 0.15);
-                        live.time += 0.033;
-                        live.flow += 0.033 * (1 + 1.5 * live.energy);
+                        live.time += dt;
+                        live.flow += dt * (1 + 1.5 * live.energy);
                     }
                 }
 
@@ -284,8 +325,8 @@ Scope {
                 readonly property var cols: art?.colors ?? []
                 property real time: 0
                 property real energy: 0
-                Timer {                              // ~30 frames a second, and none in performance mode
-                    running: card.visible && !!card.art && !Perf.low
+                Timer {                              // ~30 frames a second; none in performance mode or while covered
+                    running: card.visible && !!card.art && !Perf.low && !Drift.covered
                     interval: 33
                     repeat: true
                     onTriggered: {
