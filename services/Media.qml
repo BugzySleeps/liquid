@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
+import qs.config
 
 // The MPRIS player worth showing: the one that's playing, else the first one around.
 Singleton {
@@ -39,7 +40,23 @@ Singleton {
     // colours from the album art (Settings.artAccent): `rice accent` recolours the shell, the borders and the
     // terminals for the track, and puts the usual colours back when it's off or nothing's playing. With the
     // album wallpaper on as well (Settings.artWall) the wallpaper comes from the cover too (desktop/Wallpaper.qml)
-    readonly property bool artWall: Settings.artAccent && Settings.artWall
+    readonly property bool artWall: Settings.artAccent && Settings.artWall && !homeScene
+    // a wallpaper with a scene of its own (desktop/Wallpaper.qml) moves to the music itself: no album wallpaper over it
+    property bool homeScene: false
+    FileView {
+        path: root.sceneOf(Colors.homeWallpaper)
+        printErrors: false
+        onPathChanged: root.homeScene = false
+        onLoaded: root.homeScene = true
+        onLoadFailed: root.homeScene = false
+    }
+    // a wallpaper's scene: <its folder>/.scene/<its name>/scene.qml ("" for none, or the album wallpaper)
+    function sceneOf(wall) {
+        if (!wall || wall.indexOf("/rice-artwall/") >= 0)
+            return "";
+        const i = wall.lastIndexOf("/");
+        return wall.slice(0, i) + "/.scene/" + wall.slice(i + 1).replace(/\.[^.]*$/, "") + "/scene.qml";
+    }
     readonly property string accentFrom: Settings.loaded && Settings.artAccent && active && art ? (artWall ? "wall|" : "") + art : ""
     // unknown at start: a restarted shell can't tell what the last one left up, so the first look always applies
     property string accentNow: "?"

@@ -158,6 +158,7 @@ Scope {
 
             Image {
                 id: under
+                visible: !scene.obj || !!win.stage   // under a scene (which draws its own backdrop) it isn't seen
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
                 sourceSize.width: win.width
@@ -167,6 +168,7 @@ Scope {
             }
 
             Item {
+                visible: !scene.obj || !!win.stage
                 anchors.bottom: parent.bottom
                 width: parent.width
                 height: parent.height * win.p
@@ -298,6 +300,96 @@ Scope {
                     property vector4d sunAt: live.meta?.sun ? Qt.vector4d(live.meta.sun[0], live.meta.sun[1], live.meta.sun[2], 1) : Qt.vector4d(0, 0, 1, 0)
                     // versioned: Qt keeps a compiled shader for as long as the shell runs, so a rebuilt one needs a new name
                     fragmentShader: Qt.resolvedUrl("../shaders/livewall.frag.qsb") + "?5"
+                }
+            }
+
+            // a wallpaper with a scene of its own: <its folder>/.scene/<its name>/scene.qml, drawn over it and moved by
+            // the music (see ~/Pictures/wallpapers/.scene/claude for one). Quickshell won't load QML from outside its
+            // config folder, so it's read as text and built here; pictures it names load from its own folder.
+            // It gets `feed`: time, flow (time, quicker with music), energy and beat (0–1), bands (cava's bars), playing,
+            // accent (the album's colour with Settings.artAccent on, else null).
+            Item {
+                id: scene
+                anchors.fill: parent
+                property var obj: null
+                readonly property string file: Media.sceneOf(win.shown)
+
+                opacity: obj && !win.stage ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Style.slow
+                    }
+                }
+
+                function clear() {
+                    if (obj)
+                        obj.destroy();
+                    obj = null;
+                }
+                FileView {
+                    path: scene.file
+                    printErrors: false
+                    watchChanges: true                   // edited: built again
+                    onFileChanged: reload()
+                    onPathChanged: scene.clear()
+                    onLoadFailed: scene.clear()
+                    onLoaded: {
+                        scene.clear();
+                        try {
+                            const o = Qt.createQmlObject(text(), scene, "file://" + scene.file);
+                            if (!o)                      // (half-written while it's being saved: the next change brings it)
+                                return;
+                            o.anchors.fill = scene;
+                            o.feed = feed;
+                            scene.obj = o;
+                        } catch (e) {
+                            console.warn("wallpaper scene " + scene.file + ": " + e);
+                        }
+                    }
+                }
+
+                QtObject {
+                    id: feed
+                    property real time: 0
+                    property real flow: 0
+                    property real energy: 0
+                    property real beat: 0
+                    property var bands: []
+                    readonly property bool playing: Media.playing && Cava.values.length > 0
+                    // with album colours on (Settings.artAccent) and a track up: the shell's accent, which the
+                    // scene turns its colours to; null: its own
+                    readonly property var accent: Media.accentFrom ? Colors.accent : null
+                }
+                // 25 frames a second with music, 15 without (a frame of the whole screen isn't free on this
+                // laptop); none with live wallpapers off (Settings.liveWall), in performance mode, or while windows
+                // cover the screen (Drift.covered: nobody's looking, it picks up where it was)
+                Timer {
+                    running: scene.visible && Settings.liveWall && !Perf.low && !Drift.covered
+                    interval: feed.playing ? 40 : 66
+                    repeat: true
+                    onTriggered: {
+                        const dt = interval / 1000;
+                        const v = Cava.values, n = Math.min(10, v.length);
+                        let e = 0, b = 0;
+                        for (let i = 0; i < n; i++)
+                            e += v[i];
+                        for (let i = 0; i < Math.min(4, n); i++)
+                            b += v[i];
+                        e = n ? Math.min(1, e / n * 1.4) : 0;
+                        b = n ? Math.min(1, b / Math.min(4, n) * 1.3) : 0;
+                        feed.energy += (e - feed.energy) * (e > feed.energy ? 0.25 : 0.05);
+                        feed.beat += (b - feed.beat) * (b > feed.beat ? 0.6 : 0.15);
+                        // each bar: quick up, slower down
+                        const old = feed.bands, out = [];
+                        for (let i = 0; i < v.length; i++) {
+                            const o = old[i] ?? 0;
+                            out.push(o + (v[i] - o) * (v[i] > o ? 0.55 : 0.18));
+                        }
+                        feed.bands = out;
+                        feed.time += dt;
+                        feed.flow += dt * (1 + 1.5 * feed.energy);
+                    }
                 }
             }
 
