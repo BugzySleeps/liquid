@@ -344,18 +344,20 @@ Singleton {
     function desktop() {
         return items.filter(w => w.board === "desktop").map(dump);
     }
-    // swap the desktop to another set: the ones in both glide to their new spots, the rest leave or arrive
+    // swap the desktop to another set: the ones in both glide to their new spots, the rest leave or arrive, one
+    // after another (each is a fair bit of work to build: all at once they'd freeze a frame for most of a second,
+    // a beat apart they cascade in)
     function setDesktop(list) {
         glide();
         selected = "";
         const want = list.filter(d => types[d.type]);
         const keep = new Set(want.map(d => d.uid));
-        const gone = items.filter(w => w.board === "desktop" && !keep.has(w.uid));
-        let next = items.filter(w => w.board !== "desktop" || keep.has(w.uid));
+        swap.leaving = swap.leaving.concat(items.filter(w => w.board === "desktop" && !keep.has(w.uid)));
+        swap.arriving = [];
         for (const d of want) {
-            const w = next.find(i => i.uid === d.uid);
+            const w = items.find(i => i.uid === d.uid);
             if (!w) {
-                next.push(make(d));
+                swap.arriving.push(d);
                 continue;
             }
             w.screen = d.screen ?? w.screen;
@@ -367,10 +369,29 @@ Singleton {
             w.frame = d.frame ?? true;
             w.props = Object.assign({}, types[d.type].props, d.props ?? {});
         }
-        items = next;
-        for (const w of gone)
-            w.destroy();
-        save();
+        swap.restart();
+        swap.triggered();                        // the first one now
+    }
+    readonly property bool swapping: swap.running
+    Timer {
+        id: swap
+        property var leaving: []
+        property var arriving: []
+        interval: 70
+        repeat: true
+        onTriggered: {
+            const w = leaving.shift();
+            if (w) {
+                root.items = root.items.filter(i => i !== w);
+                w.destroy();
+            } else if (arriving.length) {
+                root.items = root.items.concat([root.make(arriving.shift())]);
+            }
+            if (!leaving.length && !arriving.length) {
+                stop();
+                root.save();
+            }
+        }
     }
 
     function save() {

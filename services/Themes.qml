@@ -38,12 +38,24 @@ Singleton {
         if (!ready || !wall || wall === current)
             return;
         if (current && Settings.perWall) {
-            profiles[current] = snapshot();
-            if (profiles[wall])
-                apply(profiles[wall]);
+            // (switched again before the last look fully landed: what's on screen isn't `current`'s, don't save it)
+            if (!later.running && !widgetsLater.running && !Widgets.swapping)
+                profiles[current] = snapshot();
+            later.look = profiles[wall] ?? null;
+            later.restart();
         }
         current = wall;
         save();
+    }
+    // the new look (shape, font, glass, widgets) lands once the wallpaper's wipe is done: all at once it's a
+    // hitch of most of a second on a slow machine, which mid-wipe would stutter it. After it, nothing else is
+    // moving, and the widgets glide into place from there
+    Timer {
+        id: later
+        property var look: null
+        interval: Colors.duration + 80
+        onTriggered: if (look)
+            root.apply(look)
     }
 
     function apply(p) {
@@ -54,6 +66,17 @@ Singleton {
             Look.setGlass(p.glass);
         if (p.glassLook)
             Look.setGlassLook(p.glassLook);
+        // the widgets a beat later: the swaps above are a hitch, and the widgets' glide shouldn't start inside it
+        widgetsLater.p = p;
+        widgetsLater.restart();
+    }
+    Timer {
+        id: widgetsLater
+        property var p: null
+        interval: 350
+        onTriggered: root.applyWidgets(p)
+    }
+    function applyWidgets(p) {
         if (Array.isArray(p.desktop)) {
             Widgets.setDesktop(p.desktop);
         } else if (p.widgets) {                  // saved before the sets: just the spots, sizes and shapes

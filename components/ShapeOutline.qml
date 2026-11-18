@@ -31,6 +31,10 @@ Item {
     // the rays: what it's morphing from, to, and how far along
     property var from: []
     property var to: []
+    // a plain box isn't drawn here at all (a desktop widget's box is a Frame): skip working one out, unless it's
+    // morphing to or from a shape. Building a widget used to work out its box's rays and best fit for nothing
+    property bool lazyBox: false
+    readonly property bool skip: lazyBox && shape === "box" && !morph.running
     property real t: 1
     readonly property var now: from.length && t < 1 ? Shapes.mix(from, to, t) : to
     readonly property var tilted: Shapes.turned(to, angle)
@@ -41,9 +45,17 @@ Item {
     function target() {
         return Shapes.rays(shape, width, height, Look.r(width, height));
     }
+    property string was: shape                   // the shape before this one (to morph a skipped box from)
     onShapeChanged: {
-        if (!to.length || width <= 0)
+        const before = was;
+        was = shape;
+        if (width <= 0)
             return;
+        if (!to.length) {
+            if (!(lazyBox && before === "box"))  // (not built yet)
+                return;
+            to = Shapes.rays("box", width, height, Look.r(width, height));
+        }
         from = now;
         to = target();
         morph.restart();
@@ -54,6 +66,11 @@ Item {
     function refit() {
         if (width <= 0 || height <= 0)
             return;
+        if (skip) {
+            to = [];
+            from = [];
+            return;
+        }
         if (!to.length || Shapes.free(shape)) {
             to = target();
             if (!morph.running)
@@ -73,6 +90,7 @@ Item {
         property: "t"
         from: 0
         to: 1
+        onFinished: root.refit()                 // (back to a box: let it go)
         duration: 650
         easing.type: Easing.OutBack
         easing.overshoot: 1.4
@@ -99,6 +117,9 @@ Item {
         anchors.fill: parent
         visible: root.now.length > 0
         preferredRendererType: root.curve ? Shape.CurveRenderer : Shape.GeometryRenderer
+        // its outline is worked out off the main thread: a glide or a morph changes it every frame, and doing that
+        // here held up everything else (switching wallpapers, the widgets gliding into their new places)
+        asynchronous: true
 
         ShapePath {
             fillColor: root.color

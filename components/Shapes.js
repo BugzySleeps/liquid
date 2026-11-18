@@ -24,6 +24,12 @@ function free(name) {
 function angle(i) {
     return i / N * 2 * Math.PI - Math.PI / 2;    // starting at the top, clockwise
 }
+// every ray's cos and sin, worked out once (QML's JavaScript is slow at trig, and these run a lot)
+var COS = [], SIN = [];
+for (var ti = 0; ti < N; ti++) {
+    COS.push(Math.cos(angle(ti)));
+    SIN.push(Math.sin(angle(ti)));
+}
 
 // a radius list, smoothed round the circle over `k` samples either side (soft corners)
 function soften(r, k) {
@@ -61,11 +67,23 @@ function polygon(n, t) {
 }
 
 // a rounded box w × h with corner radius rad, by walking each ray out to its edge (a signed distance)
+var boxCache = {}, boxKeys = [];
 function boxRays(w, h, rad) {
+    var key = Math.round(w) + "x" + Math.round(h) + "r" + Math.round(rad);
+    if (boxCache[key])
+        return boxCache[key];
+    var out = boxRaysNow(w, h, rad);
+    boxCache[key] = out;
+    boxKeys.push(key);
+    if (boxKeys.length > 64)                     // (resizing makes a lot of them: keep the recent ones)
+        delete boxCache[boxKeys.shift()];
+    return out;
+}
+function boxRaysNow(w, h, rad) {
     var out = [], bx = w / 2, by = h / 2;
     rad = Math.max(0, Math.min(rad, bx, by));
     for (var i = 0; i < N; i++) {
-        var t = angle(i), dx = Math.cos(t) * bx, dy = Math.sin(t) * by;
+        var dx = COS[i] * bx, dy = SIN[i] * by;
         var lo = 0, hi = 1.6;
         for (var it = 0; it < 22; it++) {
             var s = (lo + hi) / 2;
@@ -155,7 +173,7 @@ function inner(r, q) {
     q = q || 1;
     var a = 1;
     for (var i = 0; i < N; i++) {
-        var t = angle(i), c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+        var c = Math.abs(COS[i]), s = Math.abs(SIN[i]);
         // the box's edge along this ray is at a × min(1/c, q/s): it has to stay inside the shape
         a = Math.min(a, r[i] / Math.min(c > 1e-6 ? 1 / c : 1e9, s > 1e-6 ? q / s : 1e9));
     }
@@ -167,8 +185,8 @@ function inner(r, q) {
 // box and a tall one a tall box. Nothing big enough: the one that comes closest. [width, height, big enough]
 function fit(r, W, H, mw, mh, pad) {
     var best = [1, 1, false], bs = -1, bok = false;
-    for (var j = 0; j <= 48; j++) {
-        var k = inner(r, Math.pow(10, -1 + j / 24));    // height/width 0.1 … 10, in the stretched space
+    for (var j = 0; j <= 28; j++) {
+        var k = inner(r, Math.pow(10, -1 + j / 14));    // height/width 0.1 … 10, in the stretched space
         var pw = k[0] * W - 2 * pad, ph = k[1] * H - 2 * pad;
         var ok = pw >= mw && ph >= mh, sc = ok ? pw * ph : Math.min(pw / mw, ph / mh);
         if ((ok && !bok) || (ok === bok && sc > bs)) {
@@ -183,8 +201,18 @@ function fit(r, W, H, mw, mh, pad) {
 // the same, for content that has a compact layout: room for everything (`need`, [w, h]) if it can, or else
 // for the compact one (`least`)
 function place(r, W, H, need, least, pad) {
+    // remembered on the rays themselves (they're shared: one list per shape and turn), by size and needs
+    var key = Math.round(W) + "," + Math.round(H) + "," + need + "," + least + "," + pad;
+    var memo = r.placed;
+    if (!memo || r.placedCount > 300) {          // (a glide or a resize asks at every size: start over now and then)
+        memo = r.placed = {};
+        r.placedCount = 0;
+    }
+    if (memo[key])
+        return memo[key];
+    r.placedCount++;
     var f = fit(r, W, H, need[0], need[1], pad);
-    return f[2] ? f : fit(r, W, H, least[0], least[1], pad);
+    return memo[key] = f[2] ? f : fit(r, W, H, least[0], least[1], pad);
 }
 
 // the biggest centred circle inside the shape, in pixels (for round content, like an analog clock's face):
@@ -192,8 +220,7 @@ function place(r, W, H, need, least, pad) {
 function reach(r, w, h) {
     var m = 1e9;
     for (var i = 0; i < N; i++) {
-        var t = angle(i);
-        m = Math.min(m, r[i] * Math.sqrt(Math.pow(Math.cos(t) * w / 2, 2) + Math.pow(Math.sin(t) * h / 2, 2)));
+        m = Math.min(m, r[i] * Math.sqrt(Math.pow(COS[i] * w / 2, 2) + Math.pow(SIN[i] * h / 2, 2)));
     }
     return m;
 }
@@ -203,21 +230,24 @@ function points(r, w, h, turn, inset) {
     var pts = [], cx = w / 2, cy = h / 2, sh = Math.round((turn || 0) * N);
     var ax = Math.max(0, w / 2 - (inset || 0)), ay = Math.max(0, h / 2 - (inset || 0));
     for (var i = 0; i <= N; i++) {
-        var t = angle(i % N), v = r[((i - sh) % N + N) % N];
-        pts.push(Qt.point(cx + Math.cos(t) * v * ax, cy + Math.sin(t) * v * ay));
+        var j = i % N, v = r[((i - sh) % N + N) % N];
+        pts.push(Qt.point(cx + COS[j] * v * ax, cy + SIN[j] * v * ay));
     }
     return pts;
 }
 
 // rays `r` turned by `turn` (0–1 of a full turn, clockwise), as `points` draws them
 function turned(r, turn) {
-    var sh = Math.round((turn || 0) * N);
-    if (sh % N === 0)
+    var sh = ((Math.round((turn || 0) * N) % N) + N) % N;
+    if (sh === 0)
         return r;
+    var memo = r.turns || (r.turns = {});      // one list per shape and turn, so place() can remember on it
+    if (memo[sh])
+        return memo[sh];
     var out = [];
     for (var i = 0; i < N; i++)
         out.push(r[((i - sh) % N + N) % N]);
-    return out;
+    return memo[sh] = out;
 }
 
 function mix(a, b, f) {

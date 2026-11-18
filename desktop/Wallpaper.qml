@@ -220,8 +220,9 @@ Scope {
                         }
                     }
                     onLoadFailed: live.meta = null
-                    onPathChanged: if (!path)
-                        live.meta = null
+                    // another wallpaper: forget the last one's layers at once (they'd be looked for in the new
+                    // one's folder until its live.json loads, or fails to)
+                    onPathChanged: live.meta = null
                 }
                 Image {
                     id: plate

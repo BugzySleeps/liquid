@@ -200,6 +200,7 @@ Item {
     ShapeOutline {
         id: outline
         anchors.fill: parent
+        lazyBox: true
         visible: frame.shaped
         opacity: frame.fills ? 1 : frame.bgShown  // a picture filling the shape is content, not background
         shape: frame.shape
