@@ -22,7 +22,8 @@ import qs.welcome
 ShellRoot {
     // services that listen for things themselves are only created when first used; start these now
     // (Sounds: the terminal sounds and the unlock bubble; Tide: watching for idle; Night: the night light's schedule)
-    readonly property var listening: [Sounds, Tide, Night, Themes]
+    // (Leds: the wallpaper's colour, for LED strips)
+    readonly property var listening: [Sounds, Tide, Night, Themes, Leds]
 
     // no "config reloaded" popup after a successful edit (a failed reload still shows its error)
     Connections {

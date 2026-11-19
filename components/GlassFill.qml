@@ -41,8 +41,9 @@ ShaderEffect {
     readonly property real round: circle ? 1 : 0
     readonly property real back: seen && pic.status === Image.Ready ? 1 : 0
     readonly property real edge: masked ? 1 : 0
+    readonly property vector4d turn: Qt.vector4d(Glass.shift, Glass.sat, 0, 0)
     readonly property vector4d tune: Qt.vector4d(Look.tune.bend, Look.tune.shine, 1.15 + 0.35 * Look.tune.bend, 0)
 
     vertexShader: Qt.resolvedUrl("../shaders/glass.vert.qsb")
-    fragmentShader: Qt.resolvedUrl("../shaders/glass.frag.qsb")
+    fragmentShader: Qt.resolvedUrl("../shaders/glass.frag.qsb") + "?2"   // versioned: see Wallpaper.qml's livewall
 }

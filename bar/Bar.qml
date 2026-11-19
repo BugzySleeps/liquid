@@ -11,7 +11,7 @@ import qs.components
 // The bar: one slim borderless strip, or three floating islands (Settings.barStyle).
 //   left   = 液 (launcher), workspaces, focused app
 //   centre = clock + date (calendar), and the playing track with live bars (media)
-//   right  = cpu, memory, wifi, volume, notifications, control centre
+//   right  = cpu, memory, wifi, volume, battery (laptops), recorder, notifications, control centre
 Scope {
     Variants {
         model: Quickshell.screens
@@ -181,6 +181,26 @@ Scope {
                         Icon {
                             text: Audio.icon
                             color: Audio.muted ? Colors.mid : Colors.accent
+                        }
+                    }
+
+                    Sep {
+                        visible: Battery.present
+                    }
+
+                    // battery: the level, red when low and unplugged, bright while charging; hover for the time left
+                    Cell {
+                        visible: Battery.present
+                        pad: 9
+                        hint: Battery.status
+                        onClicked: Ui.toggle("control")
+                        Icon {
+                            text: Battery.icon
+                            color: Battery.low ? Colors.alert : Battery.charging ? Colors.bright : Colors.accent
+                        }
+                        Txt {
+                            text: Battery.pct + "%"
+                            color: Battery.low ? Colors.alert : Colors.accent
                         }
                     }
 

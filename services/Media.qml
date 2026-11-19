@@ -42,14 +42,18 @@ Singleton {
     // album wallpaper on as well (Settings.artWall) the wallpaper comes from the cover too (desktop/Wallpaper.qml)
     readonly property bool artWall: Settings.artAccent && Settings.artWall && !homeScene
     // a wallpaper with a scene of its own (desktop/Wallpaper.qml) moves to the music itself: no album wallpaper over it
-    property bool homeScene: false
+    readonly property bool homeScene: homeSceneFile.path !== "" && homeSceneFile.loaded
     FileView {
+        id: homeSceneFile
         path: root.sceneOf(Colors.homeWallpaper)
         printErrors: false
-        onPathChanged: root.homeScene = false
-        onLoaded: root.homeScene = true
-        onLoadFailed: root.homeScene = false
     }
+    // the scene's name (its folder under .scene/), for Settings.sceneTints
+    function sceneName(file) {
+        const m = (file || "").match(/\/\.scene\/([^/]+)\/scene\.qml$/);
+        return m ? m[1] : "";
+    }
+    readonly property string homeSceneName: homeScene ? sceneName(homeSceneFile.path) : ""
     // a wallpaper's scene: <its folder>/.scene/<its name>/scene.qml ("" for none, or the album wallpaper)
     function sceneOf(wall) {
         if (!wall || wall.indexOf("/rice-artwall/") >= 0)

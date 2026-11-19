@@ -28,6 +28,17 @@ Singleton {
     property bool artWall: false
     // wallpapers made alive with ~/.config/rice/livewall move (the sea rolls, what floats on it bobs)
     property bool liveWall: true
+    // a scene wallpaper's colour, by scene name ({ claude: "#5b8cff" }); none: its own. Album colours win while music plays.
+    property var sceneTints: ({})
+    property bool ledPulse: true                 // LED strips (~/.config/rice/leds) throb with the music
+    function tintScene(name, hex) {
+        const t = Object.assign({}, sceneTints);
+        if (hex)
+            t[name] = hex;
+        else
+            delete t[name];
+        set("sceneTints", t);
+    }
     // its design (shaders/artwall.frag): "waves", "aurora", "drips", "orb", or "shuffle" (one per album)
     property string artWallStyle: "waves"
 
@@ -107,7 +118,7 @@ Singleton {
         onLoaded: {
             try {
                 const d = JSON.parse(text());
-                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "artWall", "liveWall", "hideIdleMusic", "perWall", "depth"])
+                for (const k of ["barTitle", "barMedia", "barMeters", "artAccent", "artWall", "liveWall", "hideIdleMusic", "perWall", "depth", "ledPulse"])
                     if (typeof d[k] === "boolean")
                         root[k] = d[k];
                 if (["island", "vial"].includes(d.osdStyle))
@@ -150,6 +161,8 @@ Singleton {
                     root.notifStyle = d.notifStyle;
                 if (typeof d.soundVolume === "number")
                     root.soundVolume = d.soundVolume;
+                if (d.sceneTints && typeof d.sceneTints === "object")
+                    root.sceneTints = d.sceneTints;
             } catch (e) {}
             root.loaded = true;
         }
@@ -158,7 +171,7 @@ Singleton {
     Timer {
         id: saveLater
         interval: 300
-        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, canvasWidgets: root.canvasWidgets, depth: root.depth, font: root.font, artAccent: root.artAccent, artWall: root.artWall, artWallStyle: root.artWallStyle, liveWall: root.liveWall, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, islandClaude: root.islandClaude, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo }) + "\n")
+        onTriggered: file.setText(JSON.stringify({ barTitle: root.barTitle, barMedia: root.barMedia, barMeters: root.barMeters, barStyle: root.barStyle, canvasWidgets: root.canvasWidgets, depth: root.depth, font: root.font, artAccent: root.artAccent, artWall: root.artWall, artWallStyle: root.artWallStyle, liveWall: root.liveWall, perWall: root.perWall, hideIdleMusic: root.hideIdleMusic, osdStyle: root.osdStyle, islandTracks: root.islandTracks, islandNotifs: root.islandNotifs, islandClaude: root.islandClaude, lockMuffle: root.lockMuffle, perf: root.perf, sounds: root.sounds, soundVolume: root.soundVolume, termSounds: root.termSounds, termStyle: root.termStyle, notifSounds: root.notifSounds, notifStyle: root.notifStyle, lockSounds: root.lockSounds, idleTide: root.idleTide, idleAfter: root.idleAfter, tideRise: root.tideRise, nightMode: root.nightMode, nightTemp: root.nightTemp, nightFrom: root.nightFrom, nightTo: root.nightTo, sceneTints: root.sceneTints, ledPulse: root.ledPulse }) + "\n")
     }
 
     IpcHandler {

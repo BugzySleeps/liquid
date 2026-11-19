@@ -15,6 +15,10 @@ Singleton {
     readonly property var screen: Quickshell.screens[0]
     readonly property string dir: Quickshell.env("HOME") + "/.cache/ekitai/glass"
     property string backdrop: ""                 // file:// path of the blurred wallpaper, "" until it's made
+    // a scene wallpaper turning its colours (to the album's, or a picked one): how far round the colour wheel
+    // (0–1) and how colourful, so the glass turns its picture the same way (desktop/Wallpaper.qml sets these)
+    property real shift: 0
+    property real sat: 1
     // how blurred, in screen pixels (Look.tune.frost); light frosts keep more detail (a half-size picture)
     readonly property int blur: Math.round(4 + 36 * Look.tune.frost)
     readonly property string wanted: Colors.wallpaper && screen ? Colors.wallpaper + "|" + screen.width + "x" + screen.height + "|" + blur : ""

@@ -51,6 +51,20 @@ Scope {
                 value: win.height * (win.zoom - 1) / 2
                 when: win.modelData === Quickshell.screens[0]
             }
+            // a scene that turns its colours (to the album's, or one picked for it): the glass, which shows a picture of
+            // the wallpaper as it was made, turns the same way (Glass.shift / Glass.sat, glass.frag)
+            Binding {
+                target: Glass
+                property: "shift"
+                value: scene.obj && scene.obj.shift !== undefined ? scene.obj.shift : 0
+                when: win.modelData === Quickshell.screens[0]
+            }
+            Binding {
+                target: Glass
+                property: "sat"
+                value: scene.obj && scene.obj.sat !== undefined ? scene.obj.sat : 1
+                when: win.modelData === Quickshell.screens[0]
+            }
             Binding {
                 target: win.contentItem
                 property: "scale"
@@ -307,7 +321,7 @@ Scope {
             // the music (see ~/Pictures/wallpapers/.scene/claude for one). Quickshell won't load QML from outside its
             // config folder, so it's read as text and built here; pictures it names load from its own folder.
             // It gets `feed`: time, flow (time, quicker with music), energy and beat (0–1), bands (cava's bars), playing,
-            // accent (the album's colour with Settings.artAccent on, else null).
+            // accent (the album's colour with Settings.artAccent on, else the one picked in settings, else null).
             Item {
                 id: scene
                 anchors.fill: parent
@@ -358,8 +372,9 @@ Scope {
                     property var bands: []
                     readonly property bool playing: Media.playing && Cava.values.length > 0
                     // with album colours on (Settings.artAccent) and a track up: the shell's accent, which the
-                    // scene turns its colours to; null: its own
-                    readonly property var accent: Media.accentFrom ? Colors.accent : null
+                    // scene turns its colours to; else the colour picked for it in settings (Settings.sceneTints);
+                    // null: its own
+                    readonly property var accent: Media.accentFrom ? Colors.accent : (Settings.sceneTints[Media.sceneName(scene.file)] || null)
                 }
                 // 25 frames a second with music, 15 without (a frame of the whole screen isn't free on this
                 // laptop); none with live wallpapers off (Settings.liveWall), in performance mode, or while windows

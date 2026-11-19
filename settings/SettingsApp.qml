@@ -510,6 +510,72 @@ PanelWindow {
                                 Ui.openPicker();
                             }
                         }
+                        // a scene wallpaper (.scene/<name>/scene.qml): its colour, a swatch or any hex
+                        Option {
+                            id: tintOpt
+                            visible: Media.homeSceneName !== ""
+                            readonly property string name: Media.homeSceneName
+                            readonly property string tint: Settings.sceneTints[name] || ""
+                            title: "wallpaper colour"
+                            hint: "this wallpaper's colour: its own, a swatch, or any hex." + (Settings.artAccent ? " album colours still take over while music plays." : "")
+                            Chip {
+                                text: "own"
+                                on: tintOpt.tint === ""
+                                onClicked: Settings.tintScene(tintOpt.name, "")
+                            }
+                            Repeater {
+                                model: ["#ff5a5f", "#ff6fb5", "#a66bff", "#5b8cff", "#3fd0e0", "#4ee38a", "#ffd23f", "#e8e8e8"]
+                                Rectangle {
+                                    required property string modelData
+                                    readonly property bool on: tintOpt.tint.toLowerCase() === modelData
+                                    width: 22
+                                    height: 22
+                                    radius: 11
+                                    color: modelData
+                                    border.width: on ? 2 : swatchArea.containsMouse ? 1 : 0
+                                    border.color: Colors.bright
+                                    scale: swatchArea.containsMouse ? 1.12 : 1
+                                    Behavior on scale {
+                                        NumberAnimation {
+                                            duration: Style.fast
+                                        }
+                                    }
+                                    MouseArea {
+                                        id: swatchArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: Settings.tintScene(tintOpt.name, parent.modelData)
+                                    }
+                                }
+                            }
+                            Field {
+                                width: 76
+                                placeholder: "#hex"
+                                text: tintOpt.tint
+                                onSubmitted: t => {
+                                    t = t.trim().toLowerCase();
+                                    if (/^[0-9a-f]{6}$/.test(t))
+                                        t = "#" + t;
+                                    if (/^#[0-9a-f]{6}$/.test(t))
+                                        Settings.tintScene(tintOpt.name, t);
+                                }
+                            }
+                        }
+                        Option {
+                            title: "led strips"
+                            hint: "DayBetter strips (~/.config/rice/leds) take the wallpaper's colour. pulse: they throb with the music's bass while a track plays."
+                            Chip {
+                                text: "steady"
+                                on: !Settings.ledPulse
+                                onClicked: Settings.set("ledPulse", false)
+                            }
+                            Chip {
+                                text: "󰝚 pulse"
+                                on: Settings.ledPulse
+                                onClicked: Settings.set("ledPulse", true)
+                            }
+                        }
                     }
 
                     // ─ bar ─
