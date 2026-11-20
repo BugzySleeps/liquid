@@ -817,6 +817,20 @@ PanelWindow {
                         width: parent.width
                         spacing: 16
                         Option {
+                            title: "music on your phone"
+                            hint: "with ~/.config/rice/spotify, what Spotify plays on your phone shows here like local music. listen: while it plays and nothing plays here, the visualizers, the wallpaper and the led strips hear it through the microphone."
+                            Chip {
+                                text: "off"
+                                on: !Settings.phoneMic
+                                onClicked: Settings.set("phoneMic", false)
+                            }
+                            Chip {
+                                text: "󰍬 listen"
+                                on: Settings.phoneMic
+                                onClicked: Settings.set("phoneMic", true)
+                            }
+                        }
+                        Option {
                             title: "little sounds"
                             hint: "bubbles when unlocking, a click for screenshots, a tick for volume."
                             Chip {

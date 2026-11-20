@@ -7,10 +7,15 @@ import Quickshell.Services.Mpris
 import qs.config
 
 // The MPRIS player worth showing: the one that's playing, else the first one around.
+// Only music players count: cmus, and the phone's Spotify (rice spotify bridge). Browsers and videos are ignored.
 Singleton {
     id: root
 
-    readonly property var players: Mpris.players.values
+    readonly property var players: Mpris.players.values.filter(p => root.music(p))
+    function music(p) {
+        const n = (p.dbusName || "").replace("org.mpris.MediaPlayer2.", "").toLowerCase();
+        return n === "cmus" || n.startsWith("spotify_rice");
+    }
     readonly property MprisPlayer player: players.find(p => p.isPlaying) ?? players[0] ?? null
 
     readonly property bool active: !!player
